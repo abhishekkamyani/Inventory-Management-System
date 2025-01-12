@@ -1,0 +1,165 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import eye icons from react-icons
+
+const SignUp = () => {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('Admin');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // For confirm password field
+
+  const navigate = useNavigate();
+
+  const handleSignUpSubmit = async (e) => {
+    e.preventDefault();
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:3000/auth/signup', {
+        fullName,
+        email,
+        password,
+        confirmPassword,
+        role,
+      });
+
+      if (response.status === 201) {
+        setSuccess('Sign Up successful!');
+        setError('');
+        setTimeout(() => {
+          navigate('/signin');
+        }, 2000);
+
+        // Reset fields
+        setFullName('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setRole('Admin');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Error connecting to the server. Please try again.');
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white shadow-lg rounded-lg w-full max-w-lg p-8">
+        <h2 className="text-3xl font-bold text-center text-teal-600 mb-8">Create Your Account</h2>
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        {success && <p className="text-green-500 text-center mb-4">{success}</p>}
+        <form onSubmit={handleSignUpSubmit}>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-medium mb-2">Full Name</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-medium mb-2">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-medium mb-2">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Enter your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-4 flex items-center text-gray-600"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-medium mb-2">Confirm Password</label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Confirm your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-4 flex items-center text-gray-600"
+              >
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-medium mb-2">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="Admin">Admin</option>
+              <option value="Staff">Staff</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Director">Director</option>
+            </select>
+          </div>
+          <div className="flex justify-center items-center">
+            <button
+              type="submit"
+              className="px-6 py-2 text-white bg-blue-900 rounded-lg hover:bg-blue-700"
+            >
+              Sign Up
+            </button>
+          </div>
+        </form>
+        <div className="text-center mt-6">
+          <p className="text-gray-600">
+            Already have an account?{' '}
+            <a href="/signin" className="text-teal-600 font-medium hover:underline">
+              Login here
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SignUp;
