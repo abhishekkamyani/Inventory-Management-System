@@ -25,7 +25,7 @@ const AdminDashboard = () => {
         });
         setCurrentUser(response.data);
       } catch (err) {
-        setError("Failed to fetch user data. Please log in again.");
+        setError("Failed to fetch user data. Please log in again !.");
         setTimeout(() => {
           navigate("/"); // Redirect to login if fetching user fails
         }, 2000);
