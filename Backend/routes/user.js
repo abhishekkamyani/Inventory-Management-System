@@ -8,6 +8,26 @@ dotenv.config(); // Load environment variables from .env file
 
 const router = express.Router();
 
+// Middleware to verify the JWT token
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.authToken;
+
+  // Check if token exists
+  if (!token) {
+    return res.status(403).json({ message: "Access denied. No token provided." });
+  }
+
+  // Verify the token
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "Invalid or expired token." });
+    }
+    // Attach decoded user information to the request object
+    req.user = decoded;
+    next();
+  });
+};
+
 // POST /auth/signup
 router.post('/signup', async (req, res) => {
   try {
@@ -122,9 +142,17 @@ router.post('/signin', async (req, res) => {
       { expiresIn: '1h' } // Token expiration time (1 hour in this case)
     );
 
+    // Set the JWT token as an HTTP-only cookie
+    res.cookie('authToken', token, {
+      httpOnly: true, // Prevent client-side access
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      sameSite: 'strict', // Prevent CSRF
+      maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
+    });
+
+    // Send success response
     res.status(200).json({
       message: "Signin successful",
-      token,
       user: {
         id: existingUser._id,
         fullName: existingUser.fullName,
@@ -134,6 +162,30 @@ router.post('/signin', async (req, res) => {
     });
   } catch (error) {
     console.error("Error in signin:", error);
+    res.status(500).json({ message: "Internal server error. Please try again later." });
+  }
+});
+
+// GET /auth/currentUser (Check current authenticated user)
+router.get('/currentUser', verifyToken, async (req, res) => {
+  try {
+    // Fetch the user from the database using the userId from the decoded token
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Send user data as response
+    res.status(200).json({
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Error in /currentUser:", error);
     res.status(500).json({ message: "Internal server error. Please try again later." });
   }
 });

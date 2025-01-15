@@ -11,24 +11,27 @@ const SignIn = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate(); // Use navigate for redirection
-
+  
+  axios.defaults.withCredentials = true; // Ensure credentials (cookies) are sent with requests
   const handleSignInSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (email && password) {
       try {
         const response = await axios.post('http://localhost:3000/auth/signin', {
           email,
           password,
           role,
+        }, {
+          withCredentials: true, // Ensure cookies are sent with the request
         });
-
+  
         if (response.status === 200) {
           setSuccess('Sign In successful!');
           setError('');
           // Redirect to the dashboard or user-specific page
           setTimeout(() => {
-            navigate(`/dashboard/${role.toLowerCase()}`);
+            navigate(`${role.toLowerCase()}dashboard`);
           }, 2000); // Redirect after 2 seconds
         } else {
           setError('An unexpected error occurred. Please try again.');
