@@ -15,8 +15,8 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post("http://localhost:3000/auth/signin", {
         email,
         password,
-      });
-      setUser(response.data.user); // Set the user data from the backend
+      }, {withCredentials: true});
+      setUser(response.data.data.user); // Set the user data from the backend
       return { success: true, data: response.data }; // Return the full response
     } catch (error) {
       console.error("Error signing in:", error.response?.data?.message || error.message);
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
         const response = await axios.get("http://localhost:3000/auth/currentUser", {
           withCredentials: true, // Required for sending cookies
         });
-        setUser(response.data.user); // Set user data
+        setUser(response.data.data.user); // Set user data
       } catch (error) {
         console.error("Error fetching current user:", error.response?.data?.message || error.message);
       } finally {
