@@ -5,14 +5,16 @@ import LandingPage from './pages/LandingPage';
 import SignUp from './pages/SignUp';
 import SignIn from './pages/SignIn';
 import AdminDashboard from './pages/AdminDashboard';
+import { AuthProvider } from './context/AuthContext';
 function App() {
   return (
+    
     <Router>
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path='/signup' element={<SignUp/>} />
       <Route path='/signin' element={<SignIn/>} />
-      <Route path='/signin/admindashboard' element={<AdminDashboard />} />
+      <Route path='/admindashboard' element={<AdminDashboard />} />
       
     </Routes>
   </Router>

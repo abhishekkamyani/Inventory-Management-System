@@ -1,52 +1,42 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import eye icons
+import { useAuth } from '../context/AuthContext'; // Import the useAuth hook
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false); // Toggle for password visibility
-  const [role, setRole] = useState('Admin');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const { signIn } = useAuth(); // Access the signIn function from the context
   const navigate = useNavigate(); // Use navigate for redirection
-  
-  axios.defaults.withCredentials = true; // Ensure credentials (cookies) are sent with requests
+
   const handleSignInSubmit = async (e) => {
     e.preventDefault();
   
     if (email && password) {
-      try {
-        const response = await axios.post('http://localhost:3000/auth/signin', {
-          email,
-          password,
-          role,
-        }, {
-          withCredentials: true, // Ensure cookies are sent with the request
-        });
+      const response = await signIn(email, password); // Use the signIn function from AuthContext
   
-        if (response.status === 200) {
-          setSuccess('Sign In successful!');
-          setError('');
-          // Redirect to the dashboard or user-specific page
-          setTimeout(() => {
-            navigate(`${role.toLowerCase()}dashboard`);
-          }, 2000); // Redirect after 2 seconds
-        } else {
-          setError('An unexpected error occurred. Please try again.');
-        }
-      } catch (err) {
-        if (err.response && err.response.data && err.response.data.message) {
-          setError(err.response.data.message); // Backend-provided error message
-        } else {
-          setError('Error connecting to the server. Please try again.');
-        }
+      if (response.success) {
+        setSuccess('Sign In successful!');
+        setError('');
+  
+        // Accessing user data from response.data.user
+        const userRole = response.data.user.role;
+        setTimeout(() => {
+          navigate(`/${userRole.toLowerCase()}dashboard`);
+        }, 2000);
+      } else {
+        setError(response.message); // Display error message from the response
       }
     } else {
       alert('Please enter valid credentials.');
     }
   };
+  
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -85,19 +75,6 @@ const SignIn = () => {
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
-          </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-medium mb-2">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="Admin">Admin</option>
-              <option value="Staff">Staff</option>
-              <option value="Faculty">Faculty</option>
-              <option value="Director">Director</option>
-            </select>
           </div>
           <button
             type="submit"

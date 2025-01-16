@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import eye icons from react-icons
+import { useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const SignUp = () => {
   const [fullName, setFullName] = useState('');
@@ -11,8 +11,8 @@ const SignUp = () => {
   const [role, setRole] = useState('Admin');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // For confirm password field
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
 
@@ -34,18 +34,11 @@ const SignUp = () => {
       });
 
       if (response.status === 201) {
-        setSuccess('Sign Up successful!');
+        setSuccess('Sign Up successful! Redirecting to login...');
         setError('');
         setTimeout(() => {
-          navigate('/signin');
+          navigate('/login'); // Navigate to login page after successful sign-up
         }, 2000);
-
-        // Reset fields
-        setFullName('');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        setRole('Admin');
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
