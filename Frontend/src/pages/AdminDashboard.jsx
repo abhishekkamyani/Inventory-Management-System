@@ -21,10 +21,11 @@ const AdminDashboard = () => {
       try {
         const response = await axios.get("http://localhost:3000/auth/currentUser", {
           withCredentials: true,
-          Credentials :include // Ensure cookies are sent with the request
         });
-        setCurrentUser(response.data);
+        
+        setCurrentUser(response.data.user);
       } catch (err) {
+        console.log(err.message);
         setError("Failed to fetch user data. Please log in again !.");
         setTimeout(() => {
           navigate("/"); // Redirect to login if fetching user fails

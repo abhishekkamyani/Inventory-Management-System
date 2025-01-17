@@ -24,7 +24,7 @@ const SignIn = () => {
         setError('');
   
         // Accessing user data from response.data.user
-        const userRole = response.data.user.role;
+        const userRole = response.data.data.user.role;
         setTimeout(() => {
           navigate(`/${userRole.toLowerCase()}dashboard`);
         }, 2000);
