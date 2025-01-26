@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import logo from '../assets/sukkur-iba-logo.jpeg'; // Import the logo
 
 const SignUp = () => {
   const [fullName, setFullName] = useState('');
@@ -13,8 +14,39 @@ const SignUp = () => {
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [roles, setRoles] = useState([]);
+
+  useEffect(() => {
+
+    const fetchRoles = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/auth/get_roles');
+
+        console.log(response);
+
+
+        if (response.status === 200) {
+          setRoles(response.data.roles);
+        } else {
+          setError('An unexpected error occurred. Please try again.');
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    fetchRoles();
+
+    return () => { };
+  }, [])
+
+  console.log("Roles:", roles);
+
+
 
   const navigate = useNavigate();
+
+
 
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +69,7 @@ const SignUp = () => {
         setSuccess('Sign Up successful! Redirecting to login...');
         setError('');
         setTimeout(() => {
-          navigate('/login'); // Navigate to login page after successful sign-up
+          navigate('/Signin'); // Navigate to login page after successful sign-up
         }, 2000);
       } else {
         setError('An unexpected error occurred. Please try again.');
@@ -54,9 +86,21 @@ const SignUp = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white shadow-lg rounded-lg w-full max-w-lg p-8">
-        <h2 className="text-3xl font-bold text-center text-teal-600 mb-8">Create Your Account</h2>
+        {/* Logo Section */}
+        <div className="flex justify-center mb-6">
+          <img src={logo} alt="SIBAU Logo" className="h-16 w-auto" />
+        </div>
+
+        {/* Form Heading */}
+        <h2 className="text-3xl font-bold text-center text-blue-900 mb-8">
+          Create Your Account
+        </h2>
+
+        {/* Error and Success Messages */}
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         {success && <p className="text-green-500 text-center mb-4">{success}</p>}
+
+        {/* Sign Up Form */}
         <form onSubmit={handleSignUpSubmit}>
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-medium mb-2">Full Name</label>
@@ -64,7 +108,7 @@ const SignUp = () => {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
               placeholder="Enter your full name"
               required
             />
@@ -75,7 +119,7 @@ const SignUp = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
               placeholder="Enter your email"
               required
             />
@@ -87,7 +131,7 @@ const SignUp = () => {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
                 placeholder="Enter your password"
                 required
               />
@@ -107,7 +151,7 @@ const SignUp = () => {
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
                 placeholder="Confirm your password"
                 required
               />
@@ -125,27 +169,28 @@ const SignUp = () => {
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
             >
-              <option value="Admin">Admin</option>
-              <option value="Staff">Staff</option>
-              <option value="Faculty">Faculty</option>
-              <option value="Director">Director</option>
+              {roles?.map((role) => (
+                <option value={role} key={role}>{role}</option>
+              ))}
             </select>
           </div>
           <div className="flex justify-center items-center">
             <button
               type="submit"
-              className="px-6 py-2 text-white bg-blue-900 rounded-lg hover:bg-blue-700"
+              className="px-8 py-3 text-white bg-blue-900 rounded-md hover:bg-blue-800"
             >
               Sign Up
             </button>
           </div>
         </form>
+
+        {/* Login Redirect */}
         <div className="text-center mt-6">
           <p className="text-gray-600">
             Already have an account?{' '}
-            <a href="/signin" className="text-teal-600 font-medium hover:underline">
+            <a href="/signin" className="text-blue-900 font-medium hover:underline">
               Login here
             </a>
           </p>
