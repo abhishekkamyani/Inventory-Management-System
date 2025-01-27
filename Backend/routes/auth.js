@@ -6,7 +6,6 @@ import {
   getRoles,
   forgotPassword,
   resetPassword,
-  forgotPasswordEmail
 } from "../controllers/authController.js"; // Importing the necessary controllers
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { verifyResetToken } from '../controllers/authController.js';
@@ -17,12 +16,11 @@ const router = express.Router();
 router.post("/signup", signup);
 router.post("/signin", signin);
 router.get("/get_roles", getRoles);
-//router.get("/currentUser", verifyToken, getCurrentUser);
+router.get("/currentUser", verifyToken, getCurrentUser);
 
 // Password reset routes
 router.post("/forgot-password", forgotPassword); // Route for sending reset link
-router.post("/forgot-password/:id/:token", forgotPasswordEmail)
 //router.post("/reset-password/:token", resetPassword); // Route for resetting the password
-//router.get('/reset-password/:token', verifyResetToken);
+router.get('/reset-password/:token', verifyResetToken);
 
 export default router;

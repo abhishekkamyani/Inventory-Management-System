@@ -1,40 +1,44 @@
 import React, { useState } from 'react';
 import { FaLock } from 'react-icons/fa';
-import { useParams, useNavigate } from 'react-router-dom';
-import Logo from '../assets/sukkur-iba-logo.jpeg';
-import axios from 'axios';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useParams and useNavigate
+import Logo from '../assets/sukkur-iba-logo.jpeg'; // Import the logo
+import axios from 'axios'; // Import axios for API calls
 
-const ChangePassword = () => {
-  const { id, token } = useParams(); // Extract `id` and `token` from URL
-  const navigate = useNavigate();
-  const [input, setInput] = useState({
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [error, setError] = useState('');
+const ResetPassword = () => {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+  const { token } = useParams(); // Extract token from URL
+  const navigate = useNavigate(); // For redirecting after success
 
-  const handleSubmit = async (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
 
-    if (input.newPassword !== input.confirmPassword) {
+    if (!token) {
+      setError('Invalid or missing reset token.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
 
     try {
-      const res = await axios.post(`http://localhost:3000/auth/forgot-password/${id}/${token}`, {
-        password: input.newPassword,
-      });
+      // Make an API call to reset the password
+      const response = await axios.post(`http://localhost:3000/auth/reset-password/${token}`, { password });
 
-      if (res.status === 200) {
-        setSuccess('Password changed successfully!');
-        setError('');
-        setTimeout(() => navigate('/login'), 3000); // Redirect to login after success
+      if (response.data.success) {
+        setSuccess(response.data.message); // Display success message
+        setError(''); // Clear error
+        setTimeout(() => navigate('/signin'), 3000); // Redirect to sign-in page after 3 seconds
+      } else {
+        setError(response.data.message || 'Something went wrong. Please try again.');
       }
     } catch (err) {
       setError('An error occurred. Please try again later.');
-      setSuccess('');
+      setSuccess(''); // Clear success message
     }
   };
 
@@ -46,25 +50,18 @@ const ChangePassword = () => {
           <img src={Logo} alt="Sukkur IBA Logo" className="h-12" />
         </div>
 
-        <h2 className="text-3xl font-bold text-center text-blue-900 mb-8">
-          Change Password
-        </h2>
+        <h2 className="text-3xl font-bold text-center text-blue-900 mb-8">Reset Password</h2>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         {success && <p className="text-green-500 text-center mb-4">{success}</p>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleResetPassword}>
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-medium mb-2">
-              New Password
-            </label>
+            <label className="block text-gray-700 text-sm font-medium mb-2">New Password</label>
             <div className="relative">
               <input
                 type="password"
-                name="newPassword"
-                value={input.newPassword}
-                onChange={(e) =>
-                  setInput({ ...input, [e.target.name]: e.target.value })
-                }
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
                 placeholder="Enter new password"
                 required
@@ -76,17 +73,12 @@ const ChangePassword = () => {
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-medium mb-2">
-              Confirm Password
-            </label>
+            <label className="block text-gray-700 text-sm font-medium mb-2">Confirm Password</label>
             <div className="relative">
               <input
                 type="password"
-                name="confirmPassword"
-                value={input.confirmPassword}
-                onChange={(e) =>
-                  setInput({ ...input, [e.target.name]: e.target.value })
-                }
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
                 placeholder="Confirm new password"
                 required
@@ -101,16 +93,16 @@ const ChangePassword = () => {
             type="submit"
             className="w-full px-6 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 focus:outline-none"
           >
-            Change Password
+            Reset Password
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <a
-            href="/login"
+            href="/signin"
             className="text-sm text-blue-900 hover:underline block"
           >
-            Back to Login
+            Back to Sign In
           </a>
         </div>
       </div>
@@ -118,4 +110,4 @@ const ChangePassword = () => {
   );
 };
 
-export default ChangePassword;
+export default ResetPassword;
