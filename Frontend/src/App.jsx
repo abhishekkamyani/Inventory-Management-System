@@ -9,7 +9,7 @@ import StaffDashboard from './pages/StaffDashboard';
 
 import FacultyDashboard from './pages/FacultyDashboard';
 import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword1 from './pages/ResetPassword1';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -23,7 +23,7 @@ function App() {
       <Route path='/staffdashboard' element={<StaffDashboard />} />
       <Route path='/facultydashboard' element={<FacultyDashboard />} />
       <Route path='/forgot-password' element={<ForgotPassword />} />
-      <Route path='/reset-password/:token' element={<ResetPassword1/>} />
+      <Route path='/reset-password/:token' element={<ResetPassword/>} />
       
       
     </Routes>

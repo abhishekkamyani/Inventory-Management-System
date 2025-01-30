@@ -14,33 +14,38 @@ const ResetPassword = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-
+  
     if (!token) {
       setError('Invalid or missing reset token.');
       return;
     }
-
+  
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
-
+  
     try {
-      // Make an API call to reset the password
-      const response = await axios.post(`http://localhost:3000/auth/reset-password/${token}`, { password });
-
+      console.log("Sending Request with:", { password, confirmPassword, token }); // Debugging
+  
+      const response = await axios.post(`http://localhost:3000/auth/reset-password/${token}`, {
+        password,
+        confirmPassword, // ✅ Ensure confirmPassword is sent
+      });
+  
       if (response.data.success) {
-        setSuccess(response.data.message); // Display success message
-        setError(''); // Clear error
-        setTimeout(() => navigate('/signin'), 3000); // Redirect to sign-in page after 3 seconds
+        setSuccess(response.data.message); 
+        setError('');
+        setTimeout(() => navigate('/signin'), 3000);
       } else {
         setError(response.data.message || 'Something went wrong. Please try again.');
       }
     } catch (err) {
       setError('An error occurred. Please try again later.');
-      setSuccess(''); // Clear success message
+      setSuccess('');
     }
   };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

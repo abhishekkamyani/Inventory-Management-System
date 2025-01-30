@@ -1,126 +1,240 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
-// Import child components
-import UserManagement from "../modules/admin/UserManagement";
-import InventoryConfig from "../modules/admin/InventoryConfig";
-import RequisitionApprovals from "../modules/admin/RequisitionApprovals";
-import Reporting from "../modules/admin/Reporting";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import {
+  LayoutDashboard,
+  Users,
+  BoxesIcon,
+  ClipboardList,
+  Bell,
+  LogOut,
+  TrendingUp,
+  Building2,
+  QrCode,
+  FileText,
+  Package,
+  Settings as SettingsIcon,
+} from 'lucide-react';
+import UserManagement from '../components/UserManagement';
+import Inventory from '../components/Inventory';
+import Requisitions from '../components/Requisitions';
+import Departments from '../components/Departments';
+import QRScanner from '../components/QRScanner';
+import Reports from '../components/Reports';
+import Settings from '../components/Settings';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [selectedContent, setSelectedContent] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [selectedMenu, setSelectedMenu] = useState('dashboard');
   const [currentUser, setCurrentUser] = useState(null);
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    pendingRequests: 0,
+    lowStockItems: 0,
+    activeUsers: 0,
+  });
 
-  // Fetch current user data from backend
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/auth/currentUser", {
+        const response = await axios.get('http://localhost:3000/auth/currentUser', {
           withCredentials: true,
         });
-        
         setCurrentUser(response.data.user);
       } catch (err) {
-        console.log(err.message);
-        setError("Failed to fetch user data. Please log in again !.");
-        setTimeout(() => {
-          navigate("/"); // Redirect to login if fetching user fails
-        }, 2000);
+        console.error(err.message);
+        setTimeout(() => navigate('/'), 2000);
       }
     };
-  
     fetchUserData();
   }, [navigate]);
-  
 
-  // Handle Logout
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const inventoryResponse = await axios.get('http://localhost:3000/inventory/stats', {
+          withCredentials: true,
+        });
+        const { totalItems, lowStockItems } = inventoryResponse.data;
+
+        const requisitionResponse = await axios.get('http://localhost:3000/requisitions/stats', {
+          withCredentials: true,
+        });
+        const { pendingRequests } = requisitionResponse.data;
+
+        const userResponse = await axios.get('http://localhost:3000/users/stats', {
+          withCredentials: true,
+        });
+        const { activeUsers } = userResponse.data;
+
+        setStats({ totalItems, pendingRequests, lowStockItems, activeUsers });
+      } catch (err) {
+        console.error('Error fetching stats:', err.message);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const handleLogout = async () => {
     try {
-      // Send logout request to the backend to clear session or invalidate token
-      await axios.post("http://localhost:3000/auth/logout", {}, { withCredentials: true });
+      await axios.post('http://localhost:3000/auth/logout', {}, { withCredentials: true });
+      localStorage.removeItem('authToken');
+      navigate('/');
     } catch (err) {
-      console.error("Error during logout", err);
+      console.error('Error during logout:', err);
     }
-    localStorage.removeItem("authToken"); // Optional: In case you store anything else in localStorage
-    navigate("/"); // Navigate to login screen
   };
-  
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Header Section */}
-      <header className="flex justify-between items-center p-6 bg-white shadow-md">
-        <h1 className="text-2xl font-semibold text-teal-600">Admin Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-600">Welcome, {currentUser?.fullName || "Admin"}</span>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-          >
-            Log Out
-          </button>
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="w-64 bg-[#1B2850] text-white">
+        <div className="p-4">
+          <div className="text-xl font-bold mb-8">SIBA IMS</div>
+          <nav>
+            <SidebarItem
+              icon={<LayoutDashboard size={20} />}
+              text="Dashboard"
+              active={selectedMenu === 'dashboard'}
+              onClick={() => setSelectedMenu('dashboard')}
+            />
+            <SidebarItem
+              icon={<Users size={20} />}
+              text="User Management"
+              active={selectedMenu === 'users'}
+              onClick={() => setSelectedMenu('users')}
+            />
+            <SidebarItem
+              icon={<BoxesIcon size={20} />}
+              text="Inventory"
+              active={selectedMenu === 'inventory'}
+              onClick={() => setSelectedMenu('inventory')}
+            />
+            <SidebarItem
+              icon={<ClipboardList size={20} />}
+              text="Requisitions"
+              active={selectedMenu === 'requisitions'}
+              onClick={() => setSelectedMenu('requisitions')}
+            />
+            <SidebarItem
+              icon={<Building2 size={20} />}
+              text="Departments"
+              active={selectedMenu === 'departments'}
+              onClick={() => setSelectedMenu('departments')}
+            />
+            <SidebarItem
+              icon={<QrCode size={20} />}
+              text="QR Scanner"
+              active={selectedMenu === 'qr'}
+              onClick={() => setSelectedMenu('qr')}
+            />
+            <SidebarItem
+              icon={<FileText size={20} />}
+              text="Reports"
+              active={selectedMenu === 'reports'}
+              onClick={() => setSelectedMenu('reports')}
+            />
+            <SidebarItem
+              icon={<SettingsIcon size={20} />}
+              text="Settings"
+              active={selectedMenu === 'settings'}
+              onClick={() => setSelectedMenu('settings')}
+            />
+          </nav>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 flex gap-6">
-        {/* Sidebar */}
-        <aside className="w-1/4 bg-white shadow-lg rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-center mb-4">Options</h2>
-          <ul className="space-y-4">
-            <li>
-              <button
-                onClick={() => setSelectedContent(<UserManagement />)}
-                className="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                User Management
+      <div className="flex-1 overflow-hidden">
+        <header className="bg-white shadow-sm">
+          <div className="flex items-center justify-between px-6 py-4">
+            <h1 className="text-2xl font-semibold text-gray-800">Admin Dashboard</h1>
+            <div className="flex items-center space-x-4">
+              <button className="p-2 rounded-full hover:bg-gray-100">
+                <Bell size={20} />
               </button>
-            </li>
-            <li>
               <button
-                onClick={() => setSelectedContent(<InventoryConfig />)}
-                className="w-full p-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                onClick={handleLogout}
+                className="flex items-center space-x-2 text-red-600 hover:text-red-700"
               >
-                Inventory Configuration
+                <LogOut size={20} />
+                <span>Logout</span>
               </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setSelectedContent(<RequisitionApprovals />)}
-                className="w-full p-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-              >
-                Requisition Approvals
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setSelectedContent(<Reporting />)}
-                className="w-full p-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
-              >
-                Reporting
-              </button>
-            </li>
-          </ul>
-        </aside>
+            </div>
+          </div>
+        </header>
 
-        {/* Main Panel */}
-        <main className="flex-1 bg-white shadow-lg rounded-lg p-6">
-          {loading && <p>Loading...</p>}
-          {error && <p className="text-red-500">{error}</p>}
-          {selectedContent || (
-            <div className="text-center text-gray-600">
-              <h2 className="text-xl font-semibold">Welcome to the Admin Dashboard</h2>
-              <p>Select an option from the sidebar to proceed.</p>
+        <main className="p-6 overflow-auto h-[calc(100vh-4rem)]">
+          {selectedMenu === 'dashboard' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <StatCard
+                icon={<Package className="text-blue-600" />}
+                title="Total Items"
+                value={stats.totalItems}
+                trend="+2.5%"
+              />
+              <StatCard
+                icon={<ClipboardList className="text-yellow-600" />}
+                title="Pending Requests"
+                value={stats.pendingRequests}
+                trend="+0.8%"
+              />
+              <StatCard
+                icon={<BoxesIcon className="text-red-600" />}
+                title="Low Stock Items"
+                value={stats.lowStockItems}
+                trend="-1.2%"
+              />
+              <StatCard
+                icon={<Users className="text-green-600" />}
+                title="Active Users"
+                value={stats.activeUsers}
+                trend="+1.4%"
+              />
             </div>
           )}
+          {selectedMenu === 'users' && <UserManagement />}
+          {selectedMenu === 'inventory' && <Inventory />}
+          {selectedMenu === 'requisitions' && <Requisitions />}
+          {selectedMenu === 'departments' && <Departments />}
+          {selectedMenu === 'qr' && <QRScanner />}
+          {selectedMenu === 'reports' && <Reports />}
+          {selectedMenu === 'settings' && <Settings />}
         </main>
       </div>
     </div>
   );
 };
+
+const SidebarItem = ({ icon, text, active, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center space-x-2 w-full p-3 rounded-lg transition-colors ${
+      active ? 'bg-blue-700 text-white' : 'text-gray-300 hover:bg-blue-800'
+    }`}
+  >
+    {icon}
+    <span>{text}</span>
+  </button>
+);
+
+const StatCard = ({ icon, title, value, trend }) => (
+  <div className="bg-white p-6 rounded-lg shadow">
+    <div className="flex items-center justify-between mb-4">
+      <div className="p-2 bg-gray-100 rounded-lg">{icon}</div>
+      <div className="flex items-center space-x-1 text-sm">
+        <TrendingUp
+          size={16}
+          className={trend.startsWith('+') ? 'text-green-500' : 'text-red-500'}
+        />
+        <span className={trend.startsWith('+') ? 'text-green-500' : 'text-red-500'}>
+          {trend}
+        </span>
+      </div>
+    </div>
+    <h3 className="text-gray-500 text-sm">{title}</h3>
+    <p className="text-2xl font-semibold mt-1">{value}</p>
+  </div>
+);
 
 export default AdminDashboard;

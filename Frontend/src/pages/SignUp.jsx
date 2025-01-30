@@ -9,7 +9,7 @@ const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('Admin');
+  const [role, setRole] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +27,7 @@ const SignUp = () => {
 
         if (response.status === 200) {
           setRoles(response.data.roles);
+          setRole(response.data.roles[0]);
         } else {
           setError('An unexpected error occurred. Please try again.');
         }
@@ -56,14 +57,16 @@ const SignUp = () => {
       return;
     }
 
+    const data = {
+      fullName,
+      email,
+      password,
+      confirmPassword,
+      role
+    }
+
     try {
-      const response = await axios.post('http://localhost:3000/auth/signup', {
-        fullName,
-        email,
-        password,
-        confirmPassword,
-        role,
-      });
+      const response = await axios.post('http://localhost:3000/auth/signup', data);
 
       if (response.status === 201) {
         setSuccess('Sign Up successful! Redirecting to login...');

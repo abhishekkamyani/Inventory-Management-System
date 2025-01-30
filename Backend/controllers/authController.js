@@ -202,7 +202,7 @@ export const forgotPassword = async (req, res) => {
     user.passwordResetExpires = Date.now() + 15 * 60 * 1000; // Token valid for 15 minutes
     await user.save();
 
-    const resetLink = `http://localhost:3000/reset-password/${resetToken}`;
+    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
 
     // Configure nodemailer
     const transporter = nodemailer.createTransport({
@@ -235,13 +235,17 @@ export const forgotPassword = async (req, res) => {
     res.status(500).json({ message: 'Internal server error. Please try again later.' });
   }
 };
+
+
 // Reset Password Controller
-
-
 export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password, confirmPassword } = req.body;
+
+    console.log("Received Token:", token);
+    console.log("Received Password:", password);
+    console.log("Received Confirm Password:", confirmPassword);
 
     // Validate token
     if (!token) {
@@ -303,7 +307,6 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Internal server error. Please try again later." });
   }
 };
-
 
 export const verifyResetToken = async (req, res) => {
   try {

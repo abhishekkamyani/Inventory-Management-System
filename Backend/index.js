@@ -4,6 +4,10 @@ import mongoose from "mongoose";
 import cors from "cors";
 import UserRouter from "./routes/auth.js";
 import cookieParser from "cookie-parser";
+import userRoutes from './routes/userRoutes.js';
+import inventoryRoutes from './routes/inventoryRoutes.js';
+import requestRoutes from './routes/requestRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 
 dotenv.config();
 
@@ -22,6 +26,10 @@ app.use(
 
 // Routes
 app.use("/auth", UserRouter);
+//app.use("/users", userRoutes);
+// app.use("/inventory", inventoryRoutes);
+// app.use("/requests", requestRoutes);
+// app.use("/reports", reportRoutes);
 
 // MongoDB connection
 mongoose.connect("mongodb://127.0.0.1:27017/authentication")
