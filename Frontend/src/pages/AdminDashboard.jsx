@@ -1,79 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { LayoutDashboard, Users, BoxesIcon, ClipboardList, Bell, Menu, X, QrCode, FileText, Package, Settings as SettingsIcon, UserCircle } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import axios from 'axios';
-import {
-  LayoutDashboard,
-  Users,
-  BoxesIcon,
-  ClipboardList,
-  Bell,
-  LogOut,
-  TrendingUp,
-  Building2,
-  QrCode,
-  FileText,
-  Package,
-  Settings as SettingsIcon,
-} from 'lucide-react';
-import UserManagement from '../components/UserManagement';
-import Inventory from '../components/Inventory';
-import Requisitions from '../components/Requisitions';
-import Departments from '../components/Departments';
-import QRScanner from '../components/QRScanner';
-import Reports from '../components/Reports';
-import Settings from '../components/Settings';
+import { useNavigate } from 'react-router-dom';
+
+// Import the components
+import UserManagement from '../modules/admin/UserManagement';
+import Inventory from '../modules/admin/InventoryConfig';
+import Requisitions from '../modules/admin/RequisitionApprovals';
+import Departments from '../modules/admin/Departments';
+import QRScanner from '../modules/admin/QRScanner';
+import Reports from '../modules/admin/Reports';
+import Settings from '../modules/admin/Settings';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
-  const [currentUser, setCurrentUser] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+ 
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState({
-    totalItems: 0,
-    pendingRequests: 0,
-    lowStockItems: 0,
-    activeUsers: 0,
+    totalItems: 1250,
+    pendingRequests: 25,
+    lowStockItems: 15,
+    activeUsers: 45
   });
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/auth/currentUser', {
-          withCredentials: true,
-        });
-        setCurrentUser(response.data.user);
-      } catch (err) {
-        console.error(err.message);
-        setTimeout(() => navigate('/'), 2000);
-      }
-    };
-    fetchUserData();
-  }, [navigate]);
+  const inventoryByCategory = [
+    { name: 'Electronics', value: 400 },
+    { name: 'Furniture', value: 300 },
+    { name: 'Stationery', value: 200 },
+    { name: 'Books', value: 350 }
+  ];
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const inventoryResponse = await axios.get('http://localhost:3000/inventory/stats', {
-          withCredentials: true,
-        });
-        const { totalItems, lowStockItems } = inventoryResponse.data;
+  const monthlyRequests = [
+    { month: 'Jan', requests: 65 },
+    { month: 'Feb', requests: 45 },
+    { month: 'Mar', requests: 85 },
+    { month: 'Apr', requests: 55 },
+    { month: 'May', requests: 70 },
+    { month: 'Jun', requests: 90 }
+  ];
 
-        const requisitionResponse = await axios.get('http://localhost:3000/requisitions/stats', {
-          withCredentials: true,
-        });
-        const { pendingRequests } = requisitionResponse.data;
-
-        const userResponse = await axios.get('http://localhost:3000/users/stats', {
-          withCredentials: true,
-        });
-        const { activeUsers } = userResponse.data;
-
-        setStats({ totalItems, pendingRequests, lowStockItems, activeUsers });
-      } catch (err) {
-        console.error('Error fetching stats:', err.message);
-      }
-    };
-    fetchStats();
-  }, []);
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   const handleLogout = async () => {
     try {
@@ -85,126 +55,202 @@ const AdminDashboard = () => {
     }
   };
 
+  const renderContent = () => {
+    switch (selectedMenu) {
+      case 'dashboard':
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="Total Items"
+                value={stats.totalItems}
+                icon={<Package className="text-blue-500" />}
+                color="bg-blue-100"
+              />
+              <StatCard
+                title="Pending Requests"
+                value={stats.pendingRequests}
+                icon={<ClipboardList className="text-yellow-500" />}
+                color="bg-yellow-100"
+              />
+              <StatCard
+                title="Low Stock Items"
+                value={stats.lowStockItems}
+                icon={<BoxesIcon className="text-red-500" />}
+                color="bg-red-100"
+              />
+              <StatCard
+                title="Active Users"
+                value={stats.activeUsers}
+                icon={<Users className="text-green-500" />}
+                color="bg-green-100"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Monthly Requisition Requests</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyRequests} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="requests" fill="#1B2850" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Inventory by Category</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={inventoryByCategory}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {inventoryByCategory.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow overflow-hidden">
+              <h3 className="text-lg font-semibold mb-4">Recent Low Stock Items</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minimum</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {[
+                      { name: 'Printer Paper', category: 'Stationery', current: 50, minimum: 100 },
+                      { name: 'Ink Cartridges', category: 'Electronics', current: 5, minimum: 20 },
+                      { name: 'Notebooks', category: 'Stationery', current: 25, minimum: 50 }
+                    ].map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.name}</td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.category}</td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-red-600">{item.current}</td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.minimum}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      case 'users':
+        return <UserManagement />;
+      case 'inventory':
+        return <Inventory />;
+      case 'requisitions':
+        return <Requisitions />;
+      case 'departments':
+        return <Departments />;
+      case 'qr':
+        return <QRScanner />;
+      case 'reports':
+        return <Reports />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Mobile Menu Button */}
+      <button
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-[#1B2850] text-white"
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      >
+        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
       {/* Sidebar */}
-      <div className="w-64 bg-[#1B2850] text-white">
+      <div className={`
+        fixed lg:static w-64 bg-[#1B2850] text-white h-full z-40
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         <div className="p-4">
           <div className="text-xl font-bold mb-8">SIBA IMS</div>
-          <nav>
-            <SidebarItem
-              icon={<LayoutDashboard size={20} />}
-              text="Dashboard"
-              active={selectedMenu === 'dashboard'}
-              onClick={() => setSelectedMenu('dashboard')}
-            />
-            <SidebarItem
-              icon={<Users size={20} />}
-              text="User Management"
-              active={selectedMenu === 'users'}
-              onClick={() => setSelectedMenu('users')}
-            />
-            <SidebarItem
-              icon={<BoxesIcon size={20} />}
-              text="Inventory"
-              active={selectedMenu === 'inventory'}
-              onClick={() => setSelectedMenu('inventory')}
-            />
-            <SidebarItem
-              icon={<ClipboardList size={20} />}
-              text="Requisitions"
-              active={selectedMenu === 'requisitions'}
-              onClick={() => setSelectedMenu('requisitions')}
-            />
-            <SidebarItem
-              icon={<Building2 size={20} />}
-              text="Departments"
-              active={selectedMenu === 'departments'}
-              onClick={() => setSelectedMenu('departments')}
-            />
-            <SidebarItem
-              icon={<QrCode size={20} />}
-              text="QR Scanner"
-              active={selectedMenu === 'qr'}
-              onClick={() => setSelectedMenu('qr')}
-            />
-            <SidebarItem
-              icon={<FileText size={20} />}
-              text="Reports"
-              active={selectedMenu === 'reports'}
-              onClick={() => setSelectedMenu('reports')}
-            />
-            <SidebarItem
-              icon={<SettingsIcon size={20} />}
-              text="Settings"
-              active={selectedMenu === 'settings'}
-              onClick={() => setSelectedMenu('settings')}
-            />
+          <nav className="space-y-2">
+            <SidebarItem icon={<LayoutDashboard size={20} />} text="Dashboard" active={selectedMenu === 'dashboard'} onClick={() => { setSelectedMenu('dashboard'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<Users size={20} />} text="User Management" active={selectedMenu === 'users'} onClick={() => { setSelectedMenu('users'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<BoxesIcon size={20} />} text="Inventory" active={selectedMenu === 'inventory'} onClick={() => { setSelectedMenu('inventory'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<ClipboardList size={20} />} text="Requisitions" active={selectedMenu === 'requisitions'} onClick={() => { setSelectedMenu('requisitions'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<QrCode size={20} />} text="QR Scanner" active={selectedMenu === 'qr'} onClick={() => { setSelectedMenu('qr'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<FileText size={20} />} text="Reports" active={selectedMenu === 'reports'} onClick={() => { setSelectedMenu('reports'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<SettingsIcon size={20} />} text="Settings" active={selectedMenu === 'settings'} onClick={() => { setSelectedMenu('settings'); setIsMobileMenuOpen(false); }} />
           </nav>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4">
-            <h1 className="text-2xl font-semibold text-gray-800">Admin Dashboard</h1>
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 ml-12 lg:ml-0">Admin Dashboard</h1>
             <div className="flex items-center space-x-4">
               <button className="p-2 rounded-full hover:bg-gray-100">
                 <Bell size={20} />
               </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 text-red-600 hover:text-red-700"
-              >
-                <LogOut size={20} />
-                <span>Logout</span>
-              </button>
+              <div className="relative">
+                <button className="p-2 rounded-full hover:bg-gray-100" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                  <UserCircle size={24} />
+                </button>
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden">
+                    <button className="block w-full px-4 py-2 text-left hover:bg-gray-100">Account Settings</button>
+                    <button  className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" onClick={handleLogout}>Logout</button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
-
-        <main className="p-6 overflow-auto h-[calc(100vh-4rem)]">
-          {selectedMenu === 'dashboard' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              <StatCard
-                icon={<Package className="text-blue-600" />}
-                title="Total Items"
-                value={stats.totalItems}
-                trend="+2.5%"
-              />
-              <StatCard
-                icon={<ClipboardList className="text-yellow-600" />}
-                title="Pending Requests"
-                value={stats.pendingRequests}
-                trend="+0.8%"
-              />
-              <StatCard
-                icon={<BoxesIcon className="text-red-600" />}
-                title="Low Stock Items"
-                value={stats.lowStockItems}
-                trend="-1.2%"
-              />
-              <StatCard
-                icon={<Users className="text-green-600" />}
-                title="Active Users"
-                value={stats.activeUsers}
-                trend="+1.4%"
-              />
-            </div>
-          )}
-          {selectedMenu === 'users' && <UserManagement />}
-          {selectedMenu === 'inventory' && <Inventory />}
-          {selectedMenu === 'requisitions' && <Requisitions />}
-          {selectedMenu === 'departments' && <Departments />}
-          {selectedMenu === 'qr' && <QRScanner />}
-          {selectedMenu === 'reports' && <Reports />}
-          {selectedMenu === 'settings' && <Settings />}
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
+          {renderContent()}
         </main>
       </div>
     </div>
   );
 };
+
+const StatCard = ({ title, value, icon, color }) => (
+  <div className={`${color} p-4 sm:p-6 rounded-lg shadow-sm`}>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-600">{title}</p>
+        <p className="text-xl sm:text-2xl font-semibold mt-2">{value}</p>
+      </div>
+      {icon}
+    </div>
+  </div>
+);
 
 const SidebarItem = ({ icon, text, active, onClick }) => (
   <button
@@ -216,25 +262,6 @@ const SidebarItem = ({ icon, text, active, onClick }) => (
     {icon}
     <span>{text}</span>
   </button>
-);
-
-const StatCard = ({ icon, title, value, trend }) => (
-  <div className="bg-white p-6 rounded-lg shadow">
-    <div className="flex items-center justify-between mb-4">
-      <div className="p-2 bg-gray-100 rounded-lg">{icon}</div>
-      <div className="flex items-center space-x-1 text-sm">
-        <TrendingUp
-          size={16}
-          className={trend.startsWith('+') ? 'text-green-500' : 'text-red-500'}
-        />
-        <span className={trend.startsWith('+') ? 'text-green-500' : 'text-red-500'}>
-          {trend}
-        </span>
-      </div>
-    </div>
-    <h3 className="text-gray-500 text-sm">{title}</h3>
-    <p className="text-2xl font-semibold mt-1">{value}</p>
-  </div>
 );
 
 export default AdminDashboard;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaLock } from 'react-icons/fa';
 import { useParams, useNavigate } from 'react-router-dom'; // Import useParams and useNavigate
-import Logo from '../assets/sukkur-iba-logo.jpeg'; // Import the logo
+import Logo from '../assets/sukkur-iba-logo.jpg'; // Import the logo
 import axios from 'axios'; // Import axios for API calls
 
 const ResetPassword = () => {

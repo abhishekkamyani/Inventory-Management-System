@@ -133,6 +133,23 @@ export const signin = async (req, res) => {
   }
 };
 
+// logout Controller hn khaan agte continue kjaan
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("authToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Error in logout:", error);
+    res.status(500).json({ message: "Internal server error. Please try again later." });
+  }
+};
+
+
 // Current User Controller
 export const getCurrentUser = async (req, res) => {
   try {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaEnvelope } from 'react-icons/fa';
-import Logo from '../assets/sukkur-iba-logo.jpeg'; // Import the logo
+import Logo from '../assets/sukkur-iba-logo.jpg'; // Import the logo
 import axios from 'axios'; // Import axios for API calls
 
 const ForgotPassword = () => {

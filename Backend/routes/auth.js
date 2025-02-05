@@ -5,7 +5,7 @@ import {
   getCurrentUser,
   getRoles,
   forgotPassword,
-  resetPassword,
+  resetPassword,logout
 } from "../controllers/authController.js"; // Importing the necessary controllers
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { verifyResetToken } from '../controllers/authController.js';
@@ -17,7 +17,7 @@ router.post("/signup", signup);
 router.post("/signin", signin);
 router.get("/get_roles", getRoles);
 //router.get("/currentUser", verifyToken, getCurrentUser);
-
+router.post("/logout",logout)
 // Password reset routes
 router.post("/forgot-password", forgotPassword); // Route for sending reset link
 router.post("/reset-password/:token", resetPassword); // Route for resetting the password

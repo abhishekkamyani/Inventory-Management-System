@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import Logo from '../assets/sukkur-iba-logo.jpeg'; // Import the logo
+import Logo from '../assets/sukkur-iba-logo.jpg'; // Import the logo
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

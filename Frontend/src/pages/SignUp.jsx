@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import logo from '../assets/sukkur-iba-logo.jpeg'; // Import the logo
+import logo from '../assets/sukkur-iba-logo.jpg'; // Import the logo
 
 const SignUp = () => {
   const [fullName, setFullName] = useState('');
