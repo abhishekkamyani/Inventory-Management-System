@@ -48,9 +48,11 @@ export const signup = async (req, res) => {
       return res.status(409).json({ message: "User already exists. Please log in." });
     }
 
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(trimmedPassword, salt);
 
+    // Create new user
     const newUser = new User({
       fullName: trimmedFullName,
       email: trimmedEmail,
@@ -67,17 +69,16 @@ export const signup = async (req, res) => {
   }
 };
 
-// Signin Controller
 export const signin = async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
-    const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-
-    if (!trimmedEmail || !trimmedPassword) {
+    if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required." });
     }
+
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
 
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(trimmedEmail)) {
@@ -86,18 +87,26 @@ export const signin = async (req, res) => {
 
     const existingUser = await User.findOne({ email: trimmedEmail });
     if (!existingUser) {
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({ message: "Invalid email or password." });
     }
 
-    const isMatch = await bcrypt.compare(trimmedPassword, existingUser.password);
+    // Check if account is inactive
+    if (existingUser.status === "Deactive") {
+      return res.status(403).json({ message: "Your account is inactive. Contact admin for activation." });
+    }
+
+    // Verify password
+    const isMatch = await existingUser.comparePassword(trimmedPassword);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password." });
+      return res.status(401).json({ message: "Invalid email or password." });
     }
 
+    // Ensure role matches (if provided)
     if (role && role !== existingUser.role) {
-      return res.status(403).json({ message: "Incorrect role." });
+      return res.status(403).json({ message: "Incorrect role. Please check your credentials." });
     }
 
+    // Generate JWT token
     const token = jwt.sign(
       {
         userId: existingUser._id,
@@ -113,7 +122,7 @@ export const signin = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 60 * 60 * 1000,
+      maxAge: 60 * 60 * 1000, // 1 hour
     });
 
     res.status(200).json({

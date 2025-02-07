@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, BoxesIcon, ClipboardList, Bell, Menu, X, QrCode, FileText, Package, Settings as SettingsIcon, UserCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import axios from 'axios';
@@ -17,15 +17,33 @@ const AdminDashboard = () => {
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
- 
-  const navigate = useNavigate();
-
   const [stats, setStats] = useState({
     totalItems: 1250,
     pendingRequests: 25,
     lowStockItems: 15,
-    activeUsers: 45
+    activeUsers: 0, // Initialize activeUsers to 0
   });
+
+  const navigate = useNavigate();
+
+  // Fetch active users count from the backend
+  useEffect(() => {
+    const fetchActiveUsersCount = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/users/active-users', {
+          withCredentials: true,
+        });
+        setStats((prevStats) => ({
+          ...prevStats,
+          activeUsers: response.data.activeUsersCount,
+        }));
+      } catch (err) {
+        console.error('Error fetching active users count:', err);
+      }
+    };
+
+    fetchActiveUsersCount();
+  }, []);
 
   const inventoryByCategory = [
     { name: 'Electronics', value: 400 },

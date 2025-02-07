@@ -7,9 +7,9 @@ import {
   deleteInventory,
 } from "../controllers/inventoryController.js";
 
-import { authMiddleware } from "../middleware/authMiddleware.js";
-import { getInventoryStats } from '../controllers/inventoryController.js';
 
+import { getInventoryStats } from '../controllers/inventoryController.js';
+import { verifyAuth } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 
@@ -25,18 +25,18 @@ router.get('/stats', getInventoryStats);
 
 
 // Fetch all inventory items
-router.get("/", authMiddleware, getInventory);
+router.get("/", verifyAuth, getInventory);
 
 // Fetch a specific inventory item by ID
-router.get("/:id", authMiddleware, getInventoryById);
+router.get("/:id", verifyAuth, getInventoryById);
 
 // Add a new inventory item
-router.post("/", authMiddleware, addInventory);
+router.post("/",verifyAuth, addInventory);
 
 // Update an inventory item
-router.put("/:id", authMiddleware, updateInventory);
+router.put("/:id", verifyAuth, updateInventory);
 
 // Delete an inventory item
-router.delete("/:id", authMiddleware, deleteInventory);
+router.delete("/:id", verifyAuth, deleteInventory);
 
 export default router;

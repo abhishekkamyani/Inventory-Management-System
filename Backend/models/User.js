@@ -26,6 +26,13 @@ const UserSchema = new mongoose.Schema(
       enum: ["Admin", "Staff", "Faculty", "Director"],
       default: "Admin",
     },
+    status: {
+      type: String,
+      enum: ["Active", "Deactive"],
+      default: function () {
+        return this.role === "Admin" ? "Active" : "Deactive";
+      },
+    },
     passwordResetToken: {
       type: String,
       default: null,
@@ -42,8 +49,6 @@ const UserSchema = new mongoose.Schema(
 UserSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
-
-
 
 // Create the User model
 const UserModel = mongoose.model("User", UserSchema);

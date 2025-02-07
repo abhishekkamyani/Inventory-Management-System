@@ -26,7 +26,10 @@ app.use(
 
 // Routes
 app.use("/auth", UserRouter);
-//app.use("/users", userRoutes);
+
+// Use Routes
+app.use("/api/users", userRoutes); // Base route for user management
+
 // app.use("/inventory", inventoryRoutes);
 // app.use("/requests", requestRoutes);
 // app.use("/reports", reportRoutes);

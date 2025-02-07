@@ -7,7 +7,7 @@ import {
   deleteRequisition,
   getRequisitionStats
 } from "../controllers/requisitionController.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+import { verifyAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -16,18 +16,18 @@ const router = express.Router();
 router.get('/stats', getRequisitionStats);
 
 // Fetch all requisitions
-router.get("/", authMiddleware, getRequisitions);
+router.get("/", verifyAuth, getRequisitions);
 
 // Fetch a specific requisition by ID
-router.get("/:id", authMiddleware, getRequisitionById);
+router.get("/:id", verifyAuth, getRequisitionById);
 
 // Create a new requisition
-router.post("/", authMiddleware, createRequisition);
+router.post("/", verifyAuth, createRequisition);
 
 // Update a requisition (e.g., approve/reject)
-router.put("/:id", authMiddleware, updateRequisition);
+router.put("/:id", verifyAuth, updateRequisition);
 
 // Delete a requisition
-router.delete("/:id", authMiddleware, deleteRequisition);
+router.delete("/:id", verifyAuth, deleteRequisition);
 
 export default router;

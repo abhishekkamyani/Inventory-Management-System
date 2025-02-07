@@ -7,8 +7,12 @@ import {
   forgotPassword,
   resetPassword,logout
 } from "../controllers/authController.js"; // Importing the necessary controllers
-import { verifyToken } from "../middleware/authMiddleware.js";
-import { verifyResetToken } from '../controllers/authController.js';
+
+import { activateUser } from "../controllers/userController.js";
+import { verifyAuth ,verifyAdmin} from "../middleware/authMiddleware.js";
+
+
+
 
 const router = express.Router();
 
@@ -18,6 +22,12 @@ router.post("/signin", signin);
 router.get("/get_roles", getRoles);
 //router.get("/currentUser", verifyToken, getCurrentUser);
 router.post("/logout",logout)
+
+
+//router.put("/:userId/status", verifyAuth, activateUser);
+
+// Activate/Deactivate user route
+router.patch("/activate/:userId", verifyAuth, verifyAdmin, activateUser);
 // Password reset routes
 router.post("/forgot-password", forgotPassword); // Route for sending reset link
 router.post("/reset-password/:token", resetPassword); // Route for resetting the password

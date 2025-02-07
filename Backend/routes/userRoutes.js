@@ -6,23 +6,28 @@ import {
   updateUser,
   deleteUser,
 } from "../controllers/userController.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+import { getActiveUsersCount } from "../controllers/userController.js";
+import { verifyAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Fetch all users
-router.get("/", authMiddleware, getUsers);
 
-// Fetch a specific user by ID
-router.get("/:id", authMiddleware, getUserById);
+// Get the count of active users
+router.get("/active-users", getActiveUsersCount);
 
-// Create a new user
-router.post("/", authMiddleware, createUser);
+// Fetch all users (Protected)
+router.get("/", verifyAuth, getUsers);
 
-// Update a user
-router.put("/:id", authMiddleware, updateUser);
+// Fetch a specific user by ID (Protected)
+router.get("/:id", verifyAuth, getUserById);
 
-// Delete a user
-router.delete("/:id", authMiddleware, deleteUser);
+// Create a new user (Public - No Auth Required)
+router.post("/", createUser);
+
+// Update a user (Protected)
+router.put("/:id", verifyAuth, updateUser);
+
+// Delete a user (Protected)
+router.delete("/:id", verifyAuth, deleteUser);
 
 export default router;
