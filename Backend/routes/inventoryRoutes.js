@@ -7,7 +7,12 @@ import {
   deleteInventory,
 } from "../controllers/inventoryController.js";
 
-
+import { editCategory, deleteCategory } from "../controllers/categoryController.js";
+import {
+  addCategory,
+  getCategories,
+} from "../controllers/categoryController.js";
+import { addItem, getItems ,editItem, deleteItem} from "../controllers/itemController.js";
 import { getInventoryStats } from '../controllers/inventoryController.js';
 import { verifyAuth } from "../middleware/authMiddleware.js";
 const router = express.Router();
@@ -15,8 +20,24 @@ const router = express.Router();
 
 
 
+// Category Routes
+router.post("/categories", addCategory);
+router.get("/categories", getCategories);
+
+// Edit Category
+router.put("/categories/:id", editCategory);
+
+// Delete Category
+router.delete("/categories/:id", deleteCategory);
+
+// Item Routes
+router.post("/items", addItem);
+router.get("/items", getItems);
 
 
+// Item Routes
+router.put("/items/:id", editItem);
+router.delete("/items/:id", deleteItem);
 
 
 // Inventory stats route

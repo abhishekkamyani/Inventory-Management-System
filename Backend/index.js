@@ -5,10 +5,10 @@ import cors from "cors";
 import UserRouter from "./routes/auth.js";
 import cookieParser from "cookie-parser";
 import userRoutes from './routes/userRoutes.js';
-import inventoryRoutes from './routes/inventoryRoutes.js';
+
 import requestRoutes from './routes/requestRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
-
+import inventoryRoutes from "./routes/inventoryRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -33,6 +33,10 @@ app.use("/api/users", userRoutes); // Base route for user management
 // app.use("/inventory", inventoryRoutes);
 // app.use("/requests", requestRoutes);
 // app.use("/reports", reportRoutes);
+
+
+// Use Inventory Routes
+app.use("/api/inventory", inventoryRoutes);
 
 // MongoDB connection
 mongoose.connect("mongodb://127.0.0.1:27017/authentication")
