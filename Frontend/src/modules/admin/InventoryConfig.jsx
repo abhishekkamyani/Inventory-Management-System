@@ -140,7 +140,7 @@ const InventoryConfig = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col p-4">
       {/* Tabs */}
       <div className="mb-6">
         <div className="border-b border-gray-200">
@@ -183,13 +183,13 @@ const InventoryConfig = () => {
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Enter category name"
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
-                className="border p-2 rounded-md"
+                className="border p-2 rounded-md w-full sm:w-auto"
               />
               <button
                 onClick={handleAddCategory}
@@ -259,230 +259,229 @@ const InventoryConfig = () => {
       ) : (
         // Items Content
         <div className="flex-1 flex flex-col">
-    {/* Add Item Form */}
-    <div className="flex gap-2 mb-4">
-      <input
-        type="text"
-        placeholder="Item Name"
-        value={newItem.name}
-        onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-        className="border p-2 rounded-md w-1/5"
-      />
-      <select
-        value={newItem.category}
-        onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-        className="border p-2 rounded-md w-1/5"
-      >
-        <option value="">Select Category</option>
-        {categories.map((category) => (
-          <option key={category._id} value={category._id}>
-            {category.name}
-          </option>
-        ))}
-      </select>
-      <input
-        type="number"
-        placeholder="Quantity"
-        value={newItem.quantity}
-        onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
-        className="border p-2 rounded-md w-1/5"
-      />
-      <input
-        type="number"
-        placeholder="Min Stock Level"
-        value={newItem.minStockLevel}
-        onChange={(e) => setNewItem({ ...newItem, minStockLevel: e.target.value })}
-        className="border p-2 rounded-md w-1/5"
-      />
-      <input
-        type="text"
-        placeholder="Location"
-        value={newItem.location}
-        onChange={(e) => setNewItem({ ...newItem, location: e.target.value })}
-        className="border p-2 rounded-md w-1/5"
-      />
-      <select
-        value={newItem.source}
-        onChange={(e) => setNewItem({ ...newItem, source: e.target.value })}
-        className="border p-2 rounded-md w-1/5"
-      >
-        <option value="Main Campus">Main Campus</option>
-        <option value="Local Purchase">Local Purchase</option>
-      </select>
-      <button
-        onClick={handleAddItem}
-        className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center"
-      >
-        <PlusCircle className="h-4 w-4 mr-2" />
-        Add Item
-      </button>
-    </div>
+          {/* Add Item Form */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <input
+              type="text"
+              placeholder="Item Name"
+              value={newItem.name}
+              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+              className="border p-2 rounded-md w-full sm:w-1/5"
+            />
+            <select
+              value={newItem.category}
+              onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+              className="border p-2 rounded-md w-full sm:w-1/5"
+            >
+              <option value="">Select Category</option>
+              {categories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              placeholder="Quantity"
+              value={newItem.quantity}
+              onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
+              className="border p-2 rounded-md w-full sm:w-1/5"
+            />
+            <input
+              type="number"
+              placeholder="Min Stock Level"
+              value={newItem.minStockLevel}
+              onChange={(e) => setNewItem({ ...newItem, minStockLevel: e.target.value })}
+              className="border p-2 rounded-md w-full sm:w-1/5"
+            />
+            <input
+              type="text"
+              placeholder="Location"
+              value={newItem.location}
+              onChange={(e) => setNewItem({ ...newItem, location: e.target.value })}
+              className="border p-2 rounded-md w-full sm:w-1/5"
+            />
+            <select
+              value={newItem.source}
+              onChange={(e) => setNewItem({ ...newItem, source: e.target.value })}
+              className="border p-2 rounded-md w-full sm:w-1/5"
+            >
+              <option value="Main Campus">Main Campus</option>
+              <option value="Local Purchase">Local Purchase</option>
+            </select>
+            <button
+              onClick={handleAddItem}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center justify-center"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Item
+            </button>
+          </div>
 
-    {/* Items Table */}
-    <div className="bg-white rounded-lg shadow flex-1 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Item Name
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Quantity
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Min Stock Level
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Location
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Source
-              </th>
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {items.map((item) => (
-              <tr key={item._id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {editingItem === item._id ? (
-                    <input
-                      type="text"
-                      defaultValue={item.name}
-                      onBlur={(e) =>
-                        handleEditItem(item._id, { ...item, name: e.target.value })
-                      }
-                      className="border p-1 rounded"
-                    />
-                  ) : (
-                    item.name
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {editingItem === item._id ? (
-                    <select
-                      defaultValue={item.category}
-                      onBlur={(e) =>
-                        handleEditItem(item._id, { ...item, category: e.target.value })
-                      }
-                      className="border p-1 rounded"
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map((category) => (
-                        <option key={category._id} value={category._id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    categories.find((cat) => cat._id === item.category)?.name || "N/A"
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {editingItem === item._id ? (
-                    <input
-                      type="number"
-                      defaultValue={item.quantity}
-                      onBlur={(e) =>
-                        handleEditItem(item._id, { ...item, quantity: e.target.value })
-                      }
-                      className="border p-1 rounded"
-                    />
-                  ) : (
-                    item.quantity
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {editingItem === item._id ? (
-                    <input
-                      type="number"
-                      defaultValue={item.minStockLevel}
-                      onBlur={(e) =>
-                        handleEditItem(item._id, { ...item, minStockLevel: e.target.value })
-                      }
-                      className="border p-1 rounded"
-                    />
-                  ) : (
-                    item.minStockLevel
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {editingItem === item._id ? (
-                    <input
-                      type="text"
-                      defaultValue={item.location}
-                      onBlur={(e) =>
-                        handleEditItem(item._id, { ...item, location: e.target.value })
-                      }
-                      className="border p-1 rounded"
-                    />
-                  ) : (
-                    item.location
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {editingItem === item._id ? (
-                    <select
-                      defaultValue={item.source}
-                      onBlur={(e) =>
-                        handleEditItem(item._id, { ...item, source: e.target.value })
-                      }
-                      className="border p-1 rounded"
-                    >
-                      <option value="Main Campus">Main Campus</option>
-                      <option value="Local Purchase">Local Purchase</option>
-                    </select>
-                  ) : (
-                    item.source
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {editingItem === item._id ? (
-                    <>
-                      <button
-                        onClick={() => handleEditItem(item._id, item)}
-                        className="text-green-600 hover:text-green-900 mr-3"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleEditMode(item)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteItem(item._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-      
+          {/* Items Table */}
+          <div className="bg-white rounded-lg shadow flex-1 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Item Name
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Quantity
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Min Stock Level
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Location
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Source
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {items.map((item) => (
+                    <tr key={item._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {editingItem === item._id ? (
+                          <input
+                            type="text"
+                            defaultValue={item.name}
+                            onBlur={(e) =>
+                              handleEditItem(item._id, { ...item, name: e.target.value })
+                            }
+                            className="border p-1 rounded"
+                          />
+                        ) : (
+                          item.name
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {editingItem === item._id ? (
+                          <select
+                            defaultValue={item.category}
+                            onBlur={(e) =>
+                              handleEditItem(item._id, { ...item, category: e.target.value })
+                            }
+                            className="border p-1 rounded"
+                          >
+                            <option value="">Select Category</option>
+                            {categories.map((category) => (
+                              <option key={category._id} value={category._id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          categories.find((cat) => cat._id === item.category)?.name || "N/A"
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {editingItem === item._id ? (
+                          <input
+                            type="number"
+                            defaultValue={item.quantity}
+                            onBlur={(e) =>
+                              handleEditItem(item._id, { ...item, quantity: e.target.value })
+                            }
+                            className="border p-1 rounded"
+                          />
+                        ) : (
+                          item.quantity
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {editingItem === item._id ? (
+                          <input
+                            type="number"
+                            defaultValue={item.minStockLevel}
+                            onBlur={(e) =>
+                              handleEditItem(item._id, { ...item, minStockLevel: e.target.value })
+                            }
+                            className="border p-1 rounded"
+                          />
+                        ) : (
+                          item.minStockLevel
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {editingItem === item._id ? (
+                          <input
+                            type="text"
+                            defaultValue={item.location}
+                            onBlur={(e) =>
+                              handleEditItem(item._id, { ...item, location: e.target.value })
+                            }
+                            className="border p-1 rounded"
+                          />
+                        ) : (
+                          item.location
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {editingItem === item._id ? (
+                          <select
+                            defaultValue={item.source}
+                            onBlur={(e) =>
+                              handleEditItem(item._id, { ...item, source: e.target.value })
+                            }
+                            className="border p-1 rounded"
+                          >
+                            <option value="Main Campus">Main Campus</option>
+                            <option value="Local Purchase">Local Purchase</option>
+                          </select>
+                        ) : (
+                          item.source
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {editingItem === item._id ? (
+                          <>
+                            <button
+                              onClick={() => handleEditItem(item._id, item)}
+                              className="text-green-600 hover:text-green-900 mr-3"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleEditMode(item)}
+                              className="text-blue-600 hover:text-blue-900 mr-3"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteItem(item._id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

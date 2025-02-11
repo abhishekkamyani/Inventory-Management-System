@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { User } from "lucide-react"; // Import the User icon
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -12,7 +13,7 @@ const UserManagement = () => {
     email: "",
     password: "",
     role: "Admin",
-    status: "Active",
+    status: "Active", // Default status is "Active"
   });
 
   // Fetch users from the backend
@@ -99,7 +100,7 @@ const UserManagement = () => {
         email: "",
         password: "",
         role: "Admin",
-        status: "Active",
+        status: "Active", // Reset the status to "Active"
       }); // Reset the form
     } catch (err) {
       console.error("Error adding user:", err.response?.data || err.message);
@@ -158,7 +159,10 @@ const UserManagement = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredUsers.map(user => (
               <tr key={user._id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">{user.fullName}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm flex items-center">
+                  <User className="h-4 w-4 mr-2 text-gray-500" /> {/* User icon */}
+                  {user.fullName}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{user.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{user.role}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -245,18 +249,7 @@ const UserManagement = () => {
                   <option value="Director">Director</option>
                 </select>
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select
-                  name="status"
-                  value={newUser.status}
-                  onChange={handleNewUserChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Deactive">Deactive</option>
-                </select>
-              </div>
+              
               <div className="flex justify-end">
                 <button
                   type="button"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, BoxesIcon, ClipboardList, Bell, Menu, X, QrCode, FileText, Package, Settings as SettingsIcon, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Users, BoxesIcon, ClipboardList, Bell, Menu, X, FileText, Package, Settings as SettingsIcon, UserCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -9,9 +9,9 @@ import UserManagement from '../modules/admin/UserManagement';
 import Inventory from '../modules/admin/InventoryConfig';
 import Requisitions from '../modules/admin/RequisitionApprovals';
 import Departments from '../modules/admin/Departments';
-import QRScanner from '../modules/admin/QRScanner';
 import Reports from '../modules/admin/Reports';
 import Settings from '../modules/admin/Settings';
+import AuditLogs from '../modules/admin/AdminAuditLogs';
 
 const AdminDashboard = () => {
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
@@ -186,8 +186,8 @@ const AdminDashboard = () => {
         return <Requisitions />;
       case 'departments':
         return <Departments />;
-      case 'qr':
-        return <QRScanner />;
+      case 'auditlogs': // Add case for Audit Logs
+        return <AuditLogs />;
       case 'reports':
         return <Reports />;
       case 'settings':
@@ -220,7 +220,7 @@ const AdminDashboard = () => {
             <SidebarItem icon={<Users size={20} />} text="User Management" active={selectedMenu === 'users'} onClick={() => { setSelectedMenu('users'); setIsMobileMenuOpen(false); }} />
             <SidebarItem icon={<BoxesIcon size={20} />} text="Inventory" active={selectedMenu === 'inventory'} onClick={() => { setSelectedMenu('inventory'); setIsMobileMenuOpen(false); }} />
             <SidebarItem icon={<ClipboardList size={20} />} text="Requisitions" active={selectedMenu === 'requisitions'} onClick={() => { setSelectedMenu('requisitions'); setIsMobileMenuOpen(false); }} />
-            <SidebarItem icon={<QrCode size={20} />} text="QR Scanner" active={selectedMenu === 'qr'} onClick={() => { setSelectedMenu('qr'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<FileText size={20} />} text="Audit Logs" active={selectedMenu === 'auditlogs'} onClick={() => { setSelectedMenu('auditlogs'); setIsMobileMenuOpen(false); }} />
             <SidebarItem icon={<FileText size={20} />} text="Reports" active={selectedMenu === 'reports'} onClick={() => { setSelectedMenu('reports'); setIsMobileMenuOpen(false); }} />
             <SidebarItem icon={<SettingsIcon size={20} />} text="Settings" active={selectedMenu === 'settings'} onClick={() => { setSelectedMenu('settings'); setIsMobileMenuOpen(false); }} />
           </nav>

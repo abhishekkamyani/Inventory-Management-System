@@ -136,5 +136,69 @@ export const activateUser = async (req, res) => {
   }
 };
 
+import asyncHandler from 'express-async-handler';
 
+
+// @desc    Get current user
+// @route   GET /api/users/me
+// @access  Private
+export const getCurrentUser = async (req, res) => {
+  try {
+    const userId = req.user?.userId; // Ensure this matches the key in the token
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('Error in getCurrentUser:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/users/update
+// @access  Private
+export const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user?.userId; // Assuming userId is attached to the request
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update fullName if provided
+    if (req.body.fullName) {
+      user.fullName = req.body.fullName;
+    }
+
+    // Update password if provided
+    if (req.body.password) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(req.body.password, salt);
+    }
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      _id: updatedUser._id,
+      fullName: updatedUser.fullName,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      status: updatedUser.status,
+    });
+  } catch (error) {
+    console.error('Error in updateUserProfile:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
