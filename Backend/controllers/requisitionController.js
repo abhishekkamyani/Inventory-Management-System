@@ -1,14 +1,7 @@
 import { Requisition } from "../models/Requisition.js";
 
-// Get all requisitions
-export const getRequisitions = async (req, res) => {
-  try {
-    const requisitions = await Requisition.find().populate("requester item");
-    res.status(200).json(requisitions);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+import { Inventory } from '../models/Inventory.js';
+
 
 // Get requisition by ID
 export const getRequisitionById = async (req, res) => {
@@ -87,3 +80,43 @@ export const getRequisitionStats = async (req, res) => {
       res.status(500).json({ message: 'Server error', error: error.message });
     }
   };
+
+
+
+
+  // Submit a requisition
+export const submitRequisition = async (req, res) => {
+  const { itemName, quantity } = req.body;
+
+  try {
+    // Check if the item exists in the inventory
+    const item = await Inventory.findOne({ itemName });
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found in inventory' });
+    }
+
+    // Create a new requisition
+    const requisition = new Requisition({
+      item: item._id,
+      quantity,
+      requester: req.user._id, // Assuming the authenticated user is the requester
+    });
+
+    await requisition.save();
+    res.status(201).json({ message: 'Requisition submitted successfully', requisition });
+  } catch (err) {
+    res.status(500).json({ message: 'Error submitting requisition', error: err.message });
+  }
+};
+
+// Fetch all requisitions for the logged-in staff
+export const getRequisitions = async (req, res) => {
+  try {
+    const requisitions = await Requisition.find({ requester: req.user._id })
+      .populate('item', 'itemName category')
+      .select('item quantity status createdAt');
+    res.status(200).json(requisitions);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching requisitions', error: err.message });
+  }
+};

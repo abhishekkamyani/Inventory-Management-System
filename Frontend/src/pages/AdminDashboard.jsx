@@ -18,31 +18,52 @@ const AdminDashboard = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState({
-    totalItems: 1250,
+    totalItems: 0, // Initialize to 0
     pendingRequests: 25,
     lowStockItems: 15,
-    activeUsers: 0, // Initialize activeUsers to 0
+    activeUsers: 0,
   });
 
   const navigate = useNavigate();
 
   // Fetch active users count from the backend
+  const fetchActiveUsersCount = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/users/active-users', {
+        withCredentials: true,
+      });
+      setStats((prevStats) => ({
+        ...prevStats,
+        activeUsers: response.data.activeUsersCount,
+      }));
+    } catch (err) {
+      console.error('Error fetching active users count:', err);
+    }
+  };
+
+  // Fetch total items count from the backend
+  const fetchTotalItemsCount = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/inventory/total-items', {
+        withCredentials: true,
+      });
+      setStats((prevStats) => ({
+        ...prevStats,
+        totalItems: response.data.totalItemsCount,
+      }));
+    } catch (err) {
+      console.error('Error fetching total items count:', err);
+    }
+  };
+
+  // Fetch data on component mount
   useEffect(() => {
-    const fetchActiveUsersCount = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/api/users/active-users', {
-          withCredentials: true,
-        });
-        setStats((prevStats) => ({
-          ...prevStats,
-          activeUsers: response.data.activeUsersCount,
-        }));
-      } catch (err) {
-        console.error('Error fetching active users count:', err);
-      }
+    const fetchData = async () => {
+      await fetchActiveUsersCount();
+      await fetchTotalItemsCount();
     };
 
-    fetchActiveUsersCount();
+    fetchData();
   }, []);
 
   const inventoryByCategory = [
@@ -186,7 +207,7 @@ const AdminDashboard = () => {
         return <Requisitions />;
       case 'departments':
         return <Departments />;
-      case 'auditlogs': // Add case for Audit Logs
+      case 'auditlogs':
         return <AuditLogs />;
       case 'reports':
         return <Reports />;

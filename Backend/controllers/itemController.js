@@ -1,15 +1,36 @@
 import { Item } from "../models/Item.js";
 
-// Add a new item
+// Add a new item controller
 export const addItem = async (req, res) => {
   try {
-    const item = new Item(req.body);
+    // Destructure the incoming request body to ensure valid data
+    const { name, category, quantity, minStockLevel, location, source } = req.body;
+
+    // Validate required fields
+    if (!name || !category || !quantity || !minStockLevel || !location) {
+      return res.status(400).json({ message: "All required fields must be provided" });
+    }
+
+    // Create a new item based on the request body
+    const item = new Item({
+      name,
+      category,
+      quantity,
+      minStockLevel,
+      location,
+      source: source || "Main Campus", // Default source if not provided
+    });
+
+    // Save the item to the database
     await item.save();
+
+    // Respond with the newly created item
     res.status(201).json(item);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 // Get all items with category details
 export const getItems = async (req, res) => {
@@ -43,3 +64,17 @@ export const editItem = async (req, res) => {
       res.status(400).json({ message: error.message });
     }
   };
+
+
+
+  // Get total number of items Controller
+export const getTotalItemsCount = async (req, res) => {
+  try {
+    // Fetch the total number of items from the database
+    const totalItemsCount = await Item.countDocuments(); // Example for MongoDB
+    res.status(200).json({ totalItemsCount });
+  } catch (err) {
+    console.error('Error fetching total items count:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

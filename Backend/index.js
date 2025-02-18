@@ -2,10 +2,11 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
+import supplierRoutes from './routes/supplierRoutes.js';
 import UserRouter from "./routes/auth.js";
 import cookieParser from "cookie-parser";
 import userRoutes from './routes/userRoutes.js';
-
+import staffRoutes from './routes/staffRoutes.js';
 import requestRoutes from './routes/requestRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import inventoryRoutes from "./routes/inventoryRoutes.js";
@@ -27,6 +28,9 @@ app.use(
 // Routes
 app.use("/auth", UserRouter);
 
+// Routes
+app.use('/api/staff', staffRoutes);
+
 // Use Routes
 app.use("/api/users", userRoutes); // Base route for user management
 
@@ -34,6 +38,8 @@ app.use("/api/users", userRoutes); // Base route for user management
 // app.use("/requests", requestRoutes);
 // app.use("/reports", reportRoutes);
 
+// Routes
+app.use('/api/supplier', supplierRoutes);
 
 // Use Inventory Routes
 app.use("/api/inventory", inventoryRoutes);

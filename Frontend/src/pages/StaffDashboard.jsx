@@ -1,115 +1,207 @@
-// eslint-disable-next-line no-unused-vars
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, BoxesIcon, ClipboardList, Bell, Menu, X, FileText, Package, UserCircle } from 'lucide-react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-function StaffDashboard() {
+// Import components
+import StockLevels from '../modules/staff/StockLevels';
+import Requisitions from '../modules/staff/Requisitions';
+import StockAudit from '../modules/staff/StockAudit';
+import SupplierCommunication from '../modules/staff/SupplierCommunication';
+import QRCodeScanner from '../modules/staff/QRCodeScanner';
+
+const StaffDashboard = () => {
+  const [selectedMenu, setSelectedMenu] = useState('dashboard');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    pendingRequisitions: 0,
+    lowStockItems: 0,
+  });
+
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleLogout = () => {
-    setIsModalOpen(true);
+  // Fetch initial stats for the dashboard
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/staff/stats', {
+          withCredentials: true,
+        });
+        setStats(response.data);
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('http://localhost:3000/auth/logout', {}, { withCredentials: true });
+      localStorage.removeItem('authToken');
+      navigate('/');
+    } catch (err) {
+      console.error('Error during logout:', err);
+    }
   };
 
-  const handleConfirmLogout = () => {
-    localStorage.removeItem("currentUser");
-    navigate("/");
-  };
+  const renderContent = () => {
+    switch (selectedMenu) {
+      case 'dashboard':
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <StatCard
+                title="Total Items"
+                value={stats.totalItems}
+                icon={<Package className="text-blue-500" />}
+                color="bg-blue-100"
+              />
+              <StatCard
+                title="Pending Requisitions"
+                value={stats.pendingRequisitions}
+                icon={<ClipboardList className="text-yellow-500" />}
+                color="bg-yellow-100"
+              />
+              <StatCard
+                title="Low Stock Items"
+                value={stats.lowStockItems}
+                icon={<BoxesIcon className="text-red-500" />}
+                color="bg-red-100"
+              />
+            </div>
 
-  const handleCancelLogout = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleOptionClick = (option) => {
-    console.log(`${option} clicked`);
+            <div className="bg-white p-4 rounded-lg shadow overflow-hidden">
+              <h3 className="text-lg font-semibold mb-4">Recent Low Stock Items</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minimum</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {[
+                      { name: 'Printer Paper', category: 'Stationery', current: 50, minimum: 100 },
+                      { name: 'Ink Cartridges', category: 'Electronics', current: 5, minimum: 20 },
+                      { name: 'Notebooks', category: 'Stationery', current: 25, minimum: 50 }
+                    ].map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.name}</td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.category}</td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-red-600">{item.current}</td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.minimum}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      case 'stock-levels':
+        return <StockLevels />;
+      case 'requisitions':
+        return <Requisitions />;
+      case 'stock-audit':
+        return <StockAudit />;
+      case 'supplier-communication':
+        return <SupplierCommunication />;
+      case 'qr-scanner':
+        return <QRCodeScanner />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="min-h-screen p-4 bg-gray-50 flex flex-col">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex-1 text-center">
-          <h2 className="text-3xl font-semibold text-green-600">Staff Dashboard</h2>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200"
-        >
-          Log Out
-        </button>
-      </div>
+    <div className="flex h-screen bg-gray-100">
+      {/* Mobile Menu Button */}
+      <button
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-[#1B2850] text-white"
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      >
+        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
 
-      <div className="flex flex-1">
-        <div className="w-1/4 p-4 bg-white rounded-lg shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">Options</h3>
-          <ul className="space-y-4">
-            <li>
-              <div>
-                <h4 className="text-green-600 font-bold">Track Stock Levels</h4>
-                <p className="text-gray-700">Monitor inventory status and update stock levels</p>
-                <button
-                  onClick={() => handleOptionClick("Track Stock Levels")}
-                  className="mt-2 w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
-                >
-                  Go to Stock Levels
-                </button>
-              </div>
-            </li>
-            <li>
-              <div>
-                <h4 className="text-green-600 font-bold">Requisition Submissions</h4>
-                <p className="text-gray-700">Submit requisitions for supplies or equipment</p>
-                <button
-                  onClick={() => handleOptionClick("Requisition Submissions")}
-                  className="mt-2 w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
-                >
-                  Submit Requisition
-                </button>
-              </div>
-            </li>
-            <li>
-              <div>
-                <h4 className="text-green-600 font-bold">Stock Audits</h4>
-                <p className="text-gray-700">Conduct inventory audits and update stock records</p>
-                <button
-                  onClick={() => handleOptionClick("Stock Audits")}
-                  className="mt-2 w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
-                >
-                  Go to Stock Audits
-                </button>
-              </div>
-            </li>
-          </ul>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center p-6 bg-white rounded-lg shadow-lg ml-4">
-          <div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4">Selected Content</h3>
-          </div>
+      {/* Sidebar */}
+      <div className={`
+        fixed lg:static w-64 bg-[#1B2850] text-white h-full z-40
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="p-4">
+          <div className="text-xl font-bold mb-8">SIBA IMS</div>
+          <nav className="space-y-2">
+            <SidebarItem icon={<LayoutDashboard size={20} />} text="Dashboard" active={selectedMenu === 'dashboard'} onClick={() => { setSelectedMenu('dashboard'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<BoxesIcon size={20} />} text="Stock Levels" active={selectedMenu === 'stock-levels'} onClick={() => { setSelectedMenu('stock-levels'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<ClipboardList size={20} />} text="Requisitions" active={selectedMenu === 'requisitions'} onClick={() => { setSelectedMenu('requisitions'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<FileText size={20} />} text="Stock Audit" active={selectedMenu === 'stock-audit'} onClick={() => { setSelectedMenu('stock-audit'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<FileText size={20} />} text="Supplier Communication" active={selectedMenu === 'supplier-communication'} onClick={() => { setSelectedMenu('supplier-communication'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem icon={<FileText size={20} />} text="QR Code Scanner" active={selectedMenu === 'qr-scanner'} onClick={() => { setSelectedMenu('qr-scanner'); setIsMobileMenuOpen(false); }} />
+          </nav>
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h3 className="text-xl font-semibold mb-4">Are you sure you want to log out?</h3>
-            <div className="flex justify-between">
-              <button
-                onClick={handleConfirmLogout}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200"
-              >
-                Yes
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="bg-white shadow-sm">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 ml-12 lg:ml-0">Staff Dashboard</h1>
+            <div className="flex items-center space-x-4">
+              <button className="p-2 rounded-full hover:bg-gray-100">
+                <Bell size={20} />
               </button>
-              <button
-                onClick={handleCancelLogout}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200"
-              >
-                Cancel
-              </button>
+              <div className="relative">
+                <button className="p-2 rounded-full hover:bg-gray-100" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                  <UserCircle size={24} />
+                </button>
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden">
+                    <button className="block w-full px-4 py-2 text-left hover:bg-gray-100">Account Settings</button>
+                    <button className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" onClick={handleLogout}>Logout</button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        </header>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
-}
+};
+
+const StatCard = ({ title, value, icon, color }) => (
+  <div className={`${color} p-4 sm:p-6 rounded-lg shadow-sm`}>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-600">{title}</p>
+        <p className="text-xl sm:text-2xl font-semibold mt-2">{value}</p>
+      </div>
+      {icon}
+    </div>
+  </div>
+);
+
+const SidebarItem = ({ icon, text, active, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center space-x-2 w-full p-3 rounded-lg transition-colors ${
+      active ? 'bg-blue-700 text-white' : 'text-gray-300 hover:bg-blue-800'
+    }`}
+  >
+    {icon}
+    <span>{text}</span>
+  </button>
+);
 
 export default StaffDashboard;

@@ -483,7 +483,7 @@ const InventoryConfig = () => {
           </div>
         </div>
       )}
-    </div>
+    </div> 
   );
 };
 

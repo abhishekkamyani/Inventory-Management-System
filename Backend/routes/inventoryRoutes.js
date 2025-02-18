@@ -12,7 +12,7 @@ import {
   addCategory,
   getCategories,
 } from "../controllers/categoryController.js";
-import { addItem, getItems ,editItem, deleteItem} from "../controllers/itemController.js";
+import { addItem, getItems ,editItem, deleteItem,getTotalItemsCount} from "../controllers/itemController.js";
 import { getInventoryStats } from '../controllers/inventoryController.js';
 import { verifyAuth } from "../middleware/authMiddleware.js";
 const router = express.Router();
@@ -33,6 +33,7 @@ router.delete("/categories/:id", deleteCategory);
 // Item Routes
 router.post("/items", addItem);
 router.get("/items", getItems);
+router.get("/total-items", getTotalItemsCount);
 
 
 // Item Routes

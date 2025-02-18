@@ -38,7 +38,7 @@ const InventorySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
+ 
 // Method to check if stock is low
 InventorySchema.methods.isLowStock = function () {
   return this.quantity <= this.minStockLevel;
