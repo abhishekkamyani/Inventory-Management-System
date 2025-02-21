@@ -22,6 +22,21 @@ const StaffDashboard = () => {
 
   const navigate = useNavigate();
 
+  // Fetch total items count from the backend
+  const fetchTotalItemsCount = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/inventory/total-items', {
+        withCredentials: true,
+      });
+      setStats((prevStats) => ({
+        ...prevStats,
+        totalItems: response.data.totalItemsCount,
+      }));
+    } catch (err) {
+      console.error('Error fetching total items count:', err);
+    }
+  };
+
   // Fetch initial stats for the dashboard
   useEffect(() => {
     const fetchStats = async () => {
@@ -29,13 +44,18 @@ const StaffDashboard = () => {
         const response = await axios.get('http://localhost:3000/api/staff/stats', {
           withCredentials: true,
         });
-        setStats(response.data);
+        setStats((prevStats) => ({
+          ...prevStats,
+          pendingRequisitions: response.data.pendingRequisitions,
+          lowStockItems: response.data.lowStockItems,
+        }));
       } catch (err) {
         console.error('Error fetching stats:', err);
       }
     };
 
     fetchStats();
+    fetchTotalItemsCount(); // Fetch total items count separately
   }, []);
 
   const handleLogout = async () => {
