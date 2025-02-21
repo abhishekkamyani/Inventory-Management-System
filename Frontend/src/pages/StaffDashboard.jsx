@@ -8,7 +8,7 @@ import StockLevels from '../modules/staff/StockLevels';
 import Requisitions from '../modules/staff/Requisitions';
 import StockAudit from '../modules/staff/StockAudit';
 import SupplierCommunication from '../modules/staff/SupplierCommunication';
-import QRCodeScanner from '../modules/staff/QRCodeScanner';
+import QRScanner from '../modules/admin/QRScanner';
 
 const StaffDashboard = () => {
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
@@ -114,7 +114,7 @@ const StaffDashboard = () => {
       case 'supplier-communication':
         return <SupplierCommunication />;
       case 'qr-scanner':
-        return <QRCodeScanner />;
+        return <QRScanner />;
       default:
         return null;
     }

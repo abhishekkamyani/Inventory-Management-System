@@ -15,7 +15,12 @@ import {
 import { addItem, getItems ,editItem, deleteItem,getTotalItemsCount} from "../controllers/itemController.js";
 import { getInventoryStats } from '../controllers/inventoryController.js';
 import { verifyAuth } from "../middleware/authMiddleware.js";
+
+import { updateStockLevels } from '../controllers/itemController.js';
+
 const router = express.Router();
+
+
 
 
 

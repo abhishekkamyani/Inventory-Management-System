@@ -78,3 +78,35 @@ export const getTotalItemsCount = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+
+
+export const getItemById = async (req, res, next) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    res.json(item);
+  } catch (error) {
+    next(error); // Pass the error to the global error handler
+  }
+};
+
+export const updateStockLevels = async (req, res, next) => {
+  try {
+    const { itemId, quantityReceived, expectedName, expectedCategory } = req.body;
+    const item = await Item.findById(itemId);
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    if (item.name !== expectedName || item.category !== expectedCategory) {
+      return res.status(400).json({ message: 'Item details do not match' });
+    }
+    item.quantity += quantityReceived;
+    await item.save();
+    res.json({ message: 'Stock levels updated successfully', item });
+  } catch (error) {
+    next(error); // Pass the error to the global error handler
+  }
+};
