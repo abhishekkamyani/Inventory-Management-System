@@ -23,6 +23,8 @@ const AdminDashboard = () => {
     lowStockItems: 15,
     activeUsers: 0,
   });
+  const [lowStockItems, setLowStockItems] = useState([]); // Initialize as an empty array
+  const [categories, setCategories] = useState([]); // Add categories state
 
   const navigate = useNavigate();
 
@@ -56,11 +58,44 @@ const AdminDashboard = () => {
     }
   };
 
+  // Fetch low stock items from the backend
+  const fetchLowStockItems = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/inventory/low-stock-items', {
+        withCredentials: true,
+      });
+
+      if (response.data.success) {
+        setLowStockItems(response.data.data); // Update state with formatted data
+      } else {
+        console.error('Error fetching low stock items:', response.data.message);
+        setLowStockItems([]); // Set to empty array in case of an error
+      }
+    } catch (err) {
+      console.error('Error fetching low stock items:', err);
+      setLowStockItems([]); // Set to empty array in case of an error
+    }
+  };
+
+  // Fetch categories from the backend
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/inventory/categories', {
+        withCredentials: true,
+      });
+      setCategories(response.data); // Update categories state
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
+
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
       await fetchActiveUsersCount();
       await fetchTotalItemsCount();
+      await fetchLowStockItems();
+      await fetchCategories(); // Fetch categories
     };
 
     fetchData();
@@ -181,18 +216,20 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {[
-                      { name: 'Printer Paper', category: 'Stationery', current: 50, minimum: 100 },
-                      { name: 'Ink Cartridges', category: 'Electronics', current: 5, minimum: 20 },
-                      { name: 'Notebooks', category: 'Stationery', current: 25, minimum: 50 }
-                    ].map((item, index) => (
-                      <tr key={index}>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.name}</td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.category}</td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-red-600">{item.current}</td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.minimum}</td>
-                      </tr>
-                    ))}
+                    {Array.isArray(lowStockItems) && lowStockItems.map((item, index) => {
+                      // Find the category name based on the category ID
+                      const category = categories.find((cat) => cat._id === item.category);
+                      const categoryName = category ? category.name : "N/A"; // Fallback to "N/A" if category not found
+
+                      return (
+                        <tr key={index}>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.name}</td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{categoryName}</td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-red-600">{item.current}</td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">{item.minimum}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -264,7 +301,7 @@ const AdminDashboard = () => {
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden">
                     <button className="block w-full px-4 py-2 text-left hover:bg-gray-100">Account Settings</button>
-                    <button  className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" onClick={handleLogout}>Logout</button>
+                    <button className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" onClick={handleLogout}>Logout</button>
                   </div>
                 )}
               </div>

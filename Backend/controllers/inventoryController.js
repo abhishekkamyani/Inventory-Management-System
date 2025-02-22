@@ -92,3 +92,38 @@ export const getInventoryStats = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+
+
+import { Item } from '../models/Item.js';
+
+export const getLowStockItems = async (req, res) => {
+  try {
+    // Fetch items where quantity is less than minStockLevel
+    const lowStockItems = await Item.find({
+      $expr: { $lt: ['$quantity', '$minStockLevel'] },
+    })
+      .select('name category quantity minStockLevel -_id') // Include only necessary fields
+      .limit(10); // Limit to 10 items
+
+    // Format the response to match frontend expectations
+    const formattedItems = lowStockItems.map((item) => ({
+      name: item.name,
+      category: item.category,
+      current: item.quantity,
+      minimum: item.minStockLevel,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedItems, // Send formatted data
+    });
+  } catch (err) {
+    console.error('Error fetching low stock items:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: err.message, // Include the error message in the response
+    });
+  }
+};

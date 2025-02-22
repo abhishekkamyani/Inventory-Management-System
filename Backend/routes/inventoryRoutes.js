@@ -5,6 +5,7 @@ import {
   addInventory,
   updateInventory,
   deleteInventory,
+  getLowStockItems
 } from "../controllers/inventoryController.js";
 
 import { editCategory, deleteCategory } from "../controllers/categoryController.js";
@@ -39,6 +40,9 @@ router.delete("/categories/:id", deleteCategory);
 router.post("/items", addItem);
 router.get("/items", getItems);
 router.get("/total-items", getTotalItemsCount);
+
+// Route to fetch low stock items
+router.get('/low-stock-items', getLowStockItems);
 
 
 // Item Routes
