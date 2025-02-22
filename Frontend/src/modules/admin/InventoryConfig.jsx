@@ -17,6 +17,7 @@ const InventoryConfig = () => {
     source: "Main Campus",
   });
   const [editingCategory, setEditingCategory] = useState(null);
+  const [originalCategory, setOriginalCategory] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [originalItem, setOriginalItem] = useState(null);
   const [isAddingItem, setIsAddingItem] = useState(false); // Loading state for adding items
@@ -62,17 +63,30 @@ const InventoryConfig = () => {
     }
   };
 
-  // Edit a category
-  const handleEditCategory = async (categoryId, newName) => {
+  // Save edited category
+  const handleSaveCategory = async (categoryId, updatedName) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/api/inventory/categories/${categoryId}`, { name: newName });
+      const response = await axios.put(`${API_BASE_URL}/api/inventory/categories/${categoryId}`, { name: updatedName });
       setCategories(categories.map(cat => 
         cat._id === categoryId ? response.data : cat
       ));
       setEditingCategory(null);
+      setOriginalCategory(null);
     } catch (error) {
       console.error("Error editing category:", error);
     }
+  };
+
+  // Cancel category edit
+  const handleCancelCategoryEdit = () => {
+    setEditingCategory(null);
+    setOriginalCategory(null);
+  };
+
+  // Enter edit mode for a category
+  const handleEditCategoryMode = (category) => {
+    setEditingCategory(category._id);
+    setOriginalCategory({ ...category });
   };
 
   // Delete a category
@@ -158,7 +172,7 @@ const InventoryConfig = () => {
     setOriginalItem({ ...item });
   };
 
-  // Cancel edit mode
+  // Cancel edit mode for an item
   const handleCancelEdit = () => {
     setEditingItem(null);
     setOriginalItem(null);
@@ -250,7 +264,9 @@ const InventoryConfig = () => {
                           <input
                             type="text"
                             defaultValue={cat.name}
-                            onBlur={(e) => handleEditCategory(cat._id, e.target.value)}
+                            onChange={(e) => setCategories(categories.map(c => 
+                              c._id === cat._id ? { ...c, name: e.target.value } : c
+                            ))}
                             className="border p-1 rounded"
                           />
                         ) : (
@@ -261,18 +277,37 @@ const InventoryConfig = () => {
                         {items.filter(item => item.category === cat._id).length} items
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => setEditingCategory(cat._id)}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCategory(cat._id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </button>
+                        {editingCategory === cat._id ? (
+                          <>
+                            <button
+                              onClick={() => handleSaveCategory(cat._id, cat.name)}
+                              className="text-green-600 hover:text-green-900 mr-3"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelCategoryEdit}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleEditCategoryMode(cat)}
+                              className="text-blue-600 hover:text-blue-900 mr-3"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory(cat._id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}

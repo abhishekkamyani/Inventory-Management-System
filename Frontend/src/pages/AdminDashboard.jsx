@@ -19,9 +19,9 @@ const AdminDashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState({
     totalItems: 0, // Initialize to 0
-    pendingRequests: 25,
-    lowStockItems: 15,
-    activeUsers: 0,
+    pendingRequests: 25, // You can keep this or fetch it from the backend
+    lowStockItems: 0, // Initialize to 0
+    activeUsers: 0, // Initialize to 0
   });
   const [lowStockItems, setLowStockItems] = useState([]); // Initialize as an empty array
   const [categories, setCategories] = useState([]); // Add categories state
@@ -67,13 +67,25 @@ const AdminDashboard = () => {
 
       if (response.data.success) {
         setLowStockItems(response.data.data); // Update state with formatted data
+        setStats((prevStats) => ({
+          ...prevStats,
+          lowStockItems: response.data.data.length, // Update lowStockItems count
+        }));
       } else {
         console.error('Error fetching low stock items:', response.data.message);
         setLowStockItems([]); // Set to empty array in case of an error
+        setStats((prevStats) => ({
+          ...prevStats,
+          lowStockItems: 0, // Reset lowStockItems count
+        }));
       }
     } catch (err) {
       console.error('Error fetching low stock items:', err);
       setLowStockItems([]); // Set to empty array in case of an error
+      setStats((prevStats) => ({
+        ...prevStats,
+        lowStockItems: 0, // Reset lowStockItems count
+      }));
     }
   };
 
