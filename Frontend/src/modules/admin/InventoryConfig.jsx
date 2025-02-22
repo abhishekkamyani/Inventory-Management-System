@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { PlusCircle, Edit2, Trash, Search, Filter } from "lucide-react";
+import { PlusCircle, Edit2, Trash, Search } from "lucide-react";
 
 const InventoryConfig = () => {
   const [activeTab, setActiveTab] = useState("categories");
@@ -19,6 +19,7 @@ const InventoryConfig = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [originalItem, setOriginalItem] = useState(null);
+  const [isAddingItem, setIsAddingItem] = useState(false); // Loading state for adding items
 
   const API_BASE_URL = "http://localhost:3000";
 
@@ -86,10 +87,29 @@ const InventoryConfig = () => {
 
   // Add a new item
   const handleAddItem = async () => {
-    if (!newItem.name || !newItem.category) return;
+    if (!newItem.name || !newItem.category) {
+      alert("Item name and category are required!");
+      return;
+    }
+  
+    setIsAddingItem(true);
+  
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/inventory/items`, newItem);
+      // Convert quantity and minStockLevel to numbers
+      const itemToAdd = {
+        ...newItem,
+        quantity: Number(newItem.quantity),
+        minStockLevel: Number(newItem.minStockLevel),
+      };
+  
+      console.log("Adding item:", itemToAdd); // Debugging
+      const response = await axios.post(`${API_BASE_URL}/api/inventory/items`, itemToAdd);
+      console.log("Item added successfully:", response.data);
+  
+      // Update the state with the new item
       setItems([...items, response.data]);
+  
+      // Reset the form
       setNewItem({
         name: "",
         category: "",
@@ -100,6 +120,11 @@ const InventoryConfig = () => {
       });
     } catch (error) {
       console.error("Error adding item:", error);
+      if (error.response) {
+        console.error("Server response:", error.response.data);
+      }
+    } finally {
+      setIsAddingItem(false);
     }
   };
 
@@ -311,10 +336,17 @@ const InventoryConfig = () => {
             </select>
             <button
               onClick={handleAddItem}
+              disabled={isAddingItem}
               className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center justify-center"
             >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Item
+              {isAddingItem ? (
+                "Adding..."
+              ) : (
+                <>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Item
+                </>
+              )}
             </button>
           </div>
 
@@ -483,7 +515,7 @@ const InventoryConfig = () => {
           </div>
         </div>
       )}
-    </div> 
+    </div>
   );
 };
 
