@@ -6,12 +6,14 @@ import cookieParser from "cookie-parser";
 
 // Import routes
 import UserRouter from "./routes/auth.js";
+import requisitionRoutes from "./routes/requisitionRoutes.js";
+
 import staffRoutes from "./routes/staffRoutes.js";
 import qrRoutes from "./routes/qrRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import supplierRoutes from "./routes/supplierRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
-import requestRoutes from "./routes/requestRoutes.js";
+// import requestRoutes from "./routes/requestRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 
 // Load environment variables
@@ -38,8 +40,11 @@ app.use("/api/qr", qrRoutes); // QR scanner routes
 app.use("/api/users", userRoutes); // User management routes
 app.use("/api/supplier", supplierRoutes); // Supplier management routes
 app.use("/api/inventory", inventoryRoutes); // Inventory management routes
-app.use("/api/requests", requestRoutes); // Request management routes
+// app.use("/api/requests", requestRoutes); // Request management routes
 app.use("/api/reports", reportRoutes); // Report management routes
+
+app.use("/api/requisitions", requisitionRoutes);
+
 
 // MongoDB connection (unchanged)
 mongoose
