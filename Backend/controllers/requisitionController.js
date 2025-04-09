@@ -1,6 +1,6 @@
 import { Requisition } from "../models/Requisition.js";
 import { Item } from "../models/Item.js";
-
+import mongoose from "mongoose";
 // @desc    Create new requisition
 // @route   POST /api/requisitions
 // @access  Private
@@ -115,41 +115,133 @@ export const createRequisition = async (req, res) => {
 // @desc    Approve requisition
 // @route   PUT /api/requisitions/:id/approve
 // @access  Private/Admin
+// controllers/requisitionController.js
 export const approveRequisition = async (req, res) => {
   try {
-    const requisition = await Requisition.findById(req.params.id);
+    const { id } = req.params;
+    const adminId = req.user._id; // From the verified token
+
+    const requisition = await Requisition.findById(id);
     
     if (!requisition) {
-      return res.status(404).json({
-        success: false,
-        message: "Requisition not found"
+      return res.status(404).json({ message: "Requisition not found" });
+    }
+
+    if (requisition.status !== "Pending") {
+      return res.status(400).json({ 
+        message: `Requisition is already ${requisition.status}` 
       });
     }
 
-    // Update stock for each item
-    for (const item of requisition.items) {
-      await Item.findByIdAndUpdate(item.item, {
-        $inc: { quantity: -item.quantity }
-      });
-    }
-
-    // Update requisition status
     requisition.status = "Approved";
-    requisition.approvedBy = req.user.userId;  // Changed to match your JWT
+    requisition.approvedBy = adminId;
     await requisition.save();
 
-    return res.json({
-      success: true,
+    res.status(200).json({ 
       message: "Requisition approved successfully",
-      data: requisition
+      requisition 
     });
-
   } catch (error) {
-    console.error("Approval error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to approve requisition",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    console.error("Error approving requisition:", error);
+    res.status(500).json({ 
+      message: "Internal server error",
+      error: error.message 
+    });
+  }
+};
+
+
+
+
+export const rejectRequisition = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rejectionReason } = req.body;
+    const adminId = req.user._id; // From the verified token
+
+    // Validate rejection reason exists
+    if (!rejectionReason || rejectionReason.trim() === '') {
+      return res.status(400).json({ 
+        message: "Rejection reason is required and cannot be empty" 
+      });
+    }
+
+    const requisition = await Requisition.findById(id);
+    
+    if (!requisition) {
+      return res.status(404).json({ message: "Requisition not found" });
+    }
+
+    // Check if requisition is in a state that can be rejected
+    if (requisition.status !== "Pending") {
+      return res.status(400).json({ 
+        message: `Cannot reject requisition - current status is ${requisition.status}`,
+        currentStatus: requisition.status
+      });
+    }
+
+    // Update requisition with rejection details
+    requisition.status = "Rejected";
+    requisition.rejectionReason = rejectionReason;
+    requisition.rejectedBy = adminId; // Using rejectedBy instead of approvedBy
+    requisition.rejectedAt = new Date(); // Track when it was rejected
+    await requisition.save();
+
+    res.status(200).json({ 
+      message: "Requisition rejected successfully",
+      requisition: {
+        _id: requisition._id,
+        status: requisition.status,
+        rejectionReason: requisition.rejectionReason,
+        rejectedBy: requisition.rejectedBy,
+        rejectedAt: requisition.rejectedAt,
+        // Include other relevant fields as needed
+      } 
+    });
+  } catch (error) {
+    console.error("Error rejecting requisition:", error);
+    res.status(500).json({ 
+      message: "Internal server error while rejecting requisition",
+      error: error.message 
+    });
+  }
+};
+
+
+
+
+
+export const fulfillRequisition = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user._id; // From the verified token
+
+    const requisition = await Requisition.findById(id);
+    
+    if (!requisition) {
+      return res.status(404).json({ message: "Requisition not found" });
+    }
+
+    if (requisition.status !== "Approved") {
+      return res.status(400).json({ 
+        message: `Cannot fulfill requisition - current status is ${requisition.status}` 
+      });
+    }
+
+    requisition.status = "Fulfilled";
+    requisition.fulfilledBy = adminId;
+    requisition.fulfilledAt = new Date();
+    await requisition.save();
+
+    res.status(200).json({ 
+      message: "Requisition fulfilled successfully",
+      requisition 
+    });
+  } catch (error) {
+    console.error("Error fulfilling requisition:", error);
+    res.status(500).json({ 
+      message: "Internal server error",
+      error: error.message 
     });
   }
 };
@@ -159,8 +251,8 @@ export const approveRequisition = async (req, res) => {
 // @access  Private/Admin
 export const getRequisitions = async (req, res) => {
   try {
-    const requisitions = await Requisition.find()
-      .populate('user', 'fullName email role')  // Changed to match your user model
+    const requisitions = await Requisition.find({ status: { $ne: 'Cancelled' } }) // Exclude cancelled requisitions
+      .populate('user', 'fullName email role')
       .populate('approvedBy', 'fullName')
       .sort({ createdAt: -1 });
 
@@ -253,6 +345,155 @@ export const getFacultyRecentRequisitions = async (req, res) => {
     res.status(500).json({ 
       success: false,
       message: 'Failed to fetch recent requisitions',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+
+
+export const getRequisitionHistory = async (req, res) => {
+  try {
+    // Check authentication - matches your middleware's user property
+    if (!req.user?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User authentication required"
+      });
+    }
+
+    const { status, dateRange, search } = req.query;
+    const userId = req.user.userId; // Using userId from auth middleware
+
+    // Build query with user filter first
+    const query = { user: userId };
+
+    // Add status filter if specified
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    // Add date range filter if specified
+    if (dateRange && dateRange !== 'all') {
+      const now = new Date();
+      let startDate = new Date(now); // Create new date object to avoid mutation
+
+      switch (dateRange) {
+        case 'week':
+          startDate.setDate(startDate.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(startDate.getMonth() - 1);
+          break;
+        case 'year':
+          startDate.setFullYear(startDate.getFullYear() - 1);
+          break;
+      }
+
+      query.createdAt = { $gte: startDate };
+    }
+
+    // Add search filter if specified
+    if (search) {
+      query['items.name'] = { $regex: search, $options: 'i' };
+    }
+
+    // Fetch requisitions with filters
+    const requisitions = await Requisition.find(query)
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email')
+      .populate('approvedBy', 'name')
+      .lean();
+
+    res.json({
+      success: true,
+      count: requisitions.length,
+      data: requisitions
+    });
+
+  } catch (error) {
+    console.error('Requisition history error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch requisition history',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Helper function for date filtering
+function getDateFilter(dateRange) {
+  const now = new Date();
+  switch (dateRange) {
+    case 'week': return { $gte: new Date(now.setDate(now.getDate() - 7)) };
+    case 'month': return { $gte: new Date(now.setMonth(now.getMonth() - 1)) };
+    case 'year': return { $gte: new Date(now.setFullYear(now.getFullYear() - 1)) };
+    default: return null;
+  }
+}
+
+export const cancelRequisition = async (req, res) => {
+  try {
+    // Debug the incoming request
+    console.log('[DEBUG] Cancel request - full user object:', req.user);
+    console.log('[DEBUG] Request params:', req.params);
+
+    // Check authentication - matches your middleware's structure
+    if (!req.user?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID format"
+      });
+    }
+
+    // Find and update the requisition
+    const updatedReq = await Requisition.findOneAndUpdate(
+      {
+        _id: id,
+        user: userId,
+        status: 'Pending' // Only allow cancel if status is Pending
+      },
+      { status: 'Cancelled' },
+      { new: true }
+    );
+
+    if (!updatedReq) {
+      console.log('[DEBUG] Cancellation failed - possible reasons:', {
+        exists: await Requisition.exists({ _id: id }),
+        belongsToUser: await Requisition.exists({ _id: id, user: userId }),
+        currentStatus: await Requisition.findOne({ _id: id }).select('status')
+      });
+      
+      return res.status(404).json({
+        success: false,
+        message: "Requisition not found, not owned by you, or not pending"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Requisition cancelled successfully",
+      data: updatedReq
+    });
+
+  } catch (error) {
+    console.error('[FULL ERROR] Cancel requisition:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to cancel requisition",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
