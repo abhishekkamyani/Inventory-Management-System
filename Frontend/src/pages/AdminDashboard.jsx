@@ -43,6 +43,26 @@ const AdminDashboard = () => {
     }
   };
 
+  // Add this function to fetch pending requests count
+const fetchPendingRequestsCount = async () => {
+  try {
+    const response = await axios.get('http://localhost:3000/api/requisitions/pending-count', {
+      withCredentials: true,
+    });
+    setStats((prevStats) => ({
+      ...prevStats,
+      pendingRequests: response.data.count,
+    }));
+  } catch (err) {
+    console.error('Error fetching pending requests count:', err);
+    // You can keep the default value or set it to 0
+    setStats((prevStats) => ({
+      ...prevStats,
+      pendingRequests: 0,
+    }));
+  }
+};
+
   // Fetch total items count from the backend
   const fetchTotalItemsCount = async () => {
     try {
@@ -108,6 +128,7 @@ const AdminDashboard = () => {
       await fetchTotalItemsCount();
       await fetchLowStockItems();
       await fetchCategories(); // Fetch categories
+      await fetchPendingRequestsCount(); 
     };
 
     fetchData();

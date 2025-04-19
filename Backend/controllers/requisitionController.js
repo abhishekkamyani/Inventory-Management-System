@@ -273,6 +273,36 @@ export const getRequisitions = async (req, res) => {
 };
 
 
+
+// @desc    Get approved requisitions (for staff)
+// @route   GET /api/requisitions/approved
+// @access  Private/Staff
+export const getApprovedRequisitions = async (req, res) => {
+  try {
+    const requisitions = await Requisition.find({ 
+      status: { $in: ['Approved', 'Fulfilled'] } // Get both approved and fulfilled
+    })
+    .populate('user', 'fullName email role')
+    .populate('approvedBy', 'fullName')
+   
+    .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      count: requisitions.length,
+      data: requisitions
+    });
+
+  } catch (error) {
+    console.error("Get approved requisitions error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch approved requisitions",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 // @desc    Get faculty dashboard stats
 // @route   GET /api/requisitions/stats
 // @access  Private
@@ -494,6 +524,30 @@ export const cancelRequisition = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to cancel requisition",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// @desc    Get count of pending requisitions
+// @route   GET /api/requisitions/pending-count
+// @access  Private/Admin
+export const getPendingRequisitionsCount = async (req, res) => {
+  try {
+    const count = await Requisition.countDocuments({ 
+      status: 'Pending' 
+    });
+
+    res.status(200).json({
+      success: true,
+      count: count
+    });
+
+  } catch (error) {
+    console.error('Error getting pending requisitions count:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get pending requisitions count',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
