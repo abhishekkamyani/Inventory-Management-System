@@ -6,8 +6,8 @@ import mongoose from "mongoose";
 // @access  Private
 export const createRequisition = async (req, res) => {
   try {
-    // Verify user exists in request (from your auth middleware)
-    if (!req.user?.userId) {  // Changed from req.user.id to req.user.userId to match your JWT
+    // Verify user exists in request (from auth middleware)
+    if (!req.user?.userId) {
       console.error("No user ID in request");
       return res.status(401).json({ 
         success: false,
@@ -17,18 +17,11 @@ export const createRequisition = async (req, res) => {
 
     const { items } = req.body;
 
-    // Validate items array exists and is properly formatted
-    if (!Array.isArray(items)) {
+    // Validate items array
+    if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Items must be provided as an array"
-      });
-    }
-
-    if (items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "At least one item is required"
+        message: "Items must be a non-empty array"
       });
     }
 
@@ -39,18 +32,14 @@ export const createRequisition = async (req, res) => {
     for (const [index, item] of items.entries()) {
       // Check required fields
       if (!item.item || item.quantity == null || !item.purpose) {
-        validationErrors.push(`Item ${index + 1}: All fields are required`);
+        validationErrors.push(`Item ${index + 1}: All fields (item, quantity, purpose) are required`);
         continue;
       }
 
       // Validate quantity
       const quantity = Number(item.quantity);
-      if (isNaN(quantity)) {
-        validationErrors.push(`Item ${index + 1}: Quantity must be a number`);
-        continue;
-      }
-      if (quantity <= 0) {
-        validationErrors.push(`Item ${index + 1}: Quantity must be greater than 0`);
+      if (isNaN(quantity) || quantity <= 0) {
+        validationErrors.push(`Item ${index + 1}: Quantity must be a positive number`);
         continue;
       }
 
@@ -70,7 +59,7 @@ export const createRequisition = async (req, res) => {
 
       validatedItems.push({
         item: dbItem._id,
-        name: dbItem.name,
+        name: dbItem.name,  // Store item name at time of request
         quantity: quantity,
         purpose: item.purpose
       });
@@ -84,16 +73,19 @@ export const createRequisition = async (req, res) => {
       });
     }
 
-    // Create the requisition
+    // Create the requisition with new schema fields
     const requisition = await Requisition.create({
-      user: req.user.userId,  // Changed to match your JWT's userId field
+      user: req.user.userId,
+      submittedBy: req.user.userId,  // Added (assuming submitter = requester)
       items: validatedItems,
-      status: "Pending"
+      status: "Pending",
+      // statusUpdatedAt is auto-set to Date.now via schema default
+      // No approvedBy/rejectionReason needed for new requisitions
     });
 
-    // Return the created requisition with user details
+    // Return populated result
     const result = await Requisition.findById(requisition._id)
-      .populate('user', 'fullName email')  // Changed to match your user model
+      .populate('user submittedBy', 'fullName email')  // Populate both user references
       .lean();
 
     return res.status(201).json({
@@ -119,7 +111,9 @@ export const createRequisition = async (req, res) => {
 export const approveRequisition = async (req, res) => {
   try {
     const { id } = req.params;
-    const adminId = req.user._id; // From the verified token
+    const adminId = req.user.userId; // From the verified token
+    console.log("req.user._id", adminId);
+    
 
     const requisition = await Requisition.findById(id);
     
@@ -134,6 +128,7 @@ export const approveRequisition = async (req, res) => {
     }
 
     requisition.status = "Approved";
+    requisition.approvedAt = new Date();
     requisition.approvedBy = adminId;
     await requisition.save();
 
@@ -157,7 +152,7 @@ export const rejectRequisition = async (req, res) => {
   try {
     const { id } = req.params;
     const { rejectionReason } = req.body;
-    const adminId = req.user._id; // From the verified token
+    const adminId = req.user.userId; // From the verified token
 
     // Validate rejection reason exists
     if (!rejectionReason || rejectionReason.trim() === '') {
@@ -214,7 +209,7 @@ export const rejectRequisition = async (req, res) => {
 export const fulfillRequisition = async (req, res) => {
   try {
     const { id } = req.params;
-    const adminId = req.user._id; // From the verified token
+    const userId = req.user.userId; // From the verified token
 
     const requisition = await Requisition.findById(id);
     
@@ -229,7 +224,7 @@ export const fulfillRequisition = async (req, res) => {
     }
 
     requisition.status = "Fulfilled";
-    requisition.fulfilledBy = adminId;
+    requisition.fulfilledBy = userId;
     requisition.fulfilledAt = new Date();
     await requisition.save();
 
@@ -254,6 +249,7 @@ export const getRequisitions = async (req, res) => {
     const requisitions = await Requisition.find({ status: { $ne: 'Cancelled' } }) // Exclude cancelled requisitions
       .populate('user', 'fullName email role')
       .populate('approvedBy', 'fullName')
+      .populate('fulfilledBy', 'fullName')
       .sort({ createdAt: -1 });
 
     return res.json({
@@ -284,6 +280,7 @@ export const getApprovedRequisitions = async (req, res) => {
     })
     .populate('user', 'fullName email role')
     .populate('approvedBy', 'fullName')
+    .populate('fulfilledBy', 'fullName')
    
     .sort({ createdAt: -1 });
 

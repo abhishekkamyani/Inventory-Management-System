@@ -17,6 +17,13 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+
+const dateKey = {
+  "Approved": "approvedAt",
+  "Rejected": "rejectedAt",
+  "Fulfilled": "approvedAt",
+}
+
 const RequisitionApprovals = () => {
   const [requisitions, setRequisitions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,51 +44,51 @@ const RequisitionApprovals = () => {
 
   const navigate = useNavigate();
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [reqRes, itemsRes] = await Promise.all([
+        axios.get('http://localhost:3000/api/requisitions', { withCredentials: true }),
+        axios.get('http://localhost:3000/api/inventory/items', { withCredentials: true })
+      ]); console.log("Requisitions:", reqRes.data); // Add this line
+      console.log("Items:", itemsRes.data); // Add this line
+
+      // Ensure requisitions is always an array
+      setRequisitions(Array.isArray(reqRes.data?.data) ? reqRes.data.data : []);
+      setAvailableItems(Array.isArray(itemsRes.data) ? itemsRes.data : []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      // Set to empty arrays on error
+      setRequisitions([]);
+      setAvailableItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Fetch all requisitions and items
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [reqRes, itemsRes] = await Promise.all([
-          axios.get('http://localhost:3000/api/requisitions', { withCredentials: true }),
-          axios.get('http://localhost:3000/api/inventory/items', { withCredentials: true })
-        ]); console.log("Requisitions:", reqRes.data); // Add this line
-        console.log("Items:", itemsRes.data); // Add this line
-
-        // Ensure requisitions is always an array
-        setRequisitions(Array.isArray(reqRes.data?.data) ? reqRes.data.data : []);
-        setAvailableItems(Array.isArray(itemsRes.data) ? itemsRes.data : []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        // Set to empty arrays on error
-        setRequisitions([]);
-        setAvailableItems([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
   const handleApprove = async (requisitionId) => {
     try {
       setLoading(true);
-      
+
       const response = await axios.patch(
         `http://localhost:3000/api/requisitions/${requisitionId}/approve`,
         {},
         { withCredentials: true }
       );
-  
+
       if (response.data && response.data.message === "Requisition approved successfully") {
-        setRequisitions(prev =>
-          prev.map(req =>
-            req._id === requisitionId ? { ...req, status: 'Approved' } : req
-          )
-        );
+        // setRequisitions(prev =>
+        //   prev.map(req =>
+        //     req._id === requisitionId ? { ...req, status: 'Approved' } : req
+        //   )
+        // );
         toast.success("Requisition approved successfully");
       }
+      fetchData();
     } catch (err) {
       console.error("Approval error:", err);
       toast.error(err.response?.data?.message || "Failed to approve requisition");
@@ -95,29 +102,30 @@ const RequisitionApprovals = () => {
       toast.error("Please provide a valid rejection reason");
       return;
     }
-  
+
     try {
       setLoading(true);
-      
+
       const response = await axios.patch(
         `http://localhost:3000/api/requisitions/${selectedRequisition}/reject`,
         { rejectionReason },
         { withCredentials: true }
       );
-  
+
       if (response.data?.message === "Requisition rejected successfully") {
-        setRequisitions(prev =>
-          prev.map(req =>
-            req._id === selectedRequisition 
-              ? { 
-                  ...req, 
-                  status: 'Rejected', 
-                  rejectionReason,
-                  rejectedBy: response.data.requisition.rejectedBy
-                } 
-              : req
-          )
-        );
+        // setRequisitions(prev =>
+        //   prev.map(req =>
+        //     req._id === selectedRequisition
+        //       ? {
+        //         ...req,
+        //         status: 'Rejected',
+        //         rejectionReason,
+        //         rejectedBy: response.data.requisition.rejectedBy
+        //       }
+        //       : req
+        //   )
+        // );
+        fetchData();
         toast.success("Requisition rejected successfully");
         setShowRejectDialog(false);
         setRejectionReason('');
@@ -134,26 +142,27 @@ const RequisitionApprovals = () => {
   const handleFulfill = async (requisitionId) => {
     try {
       setLoading(true);
-      
+
       const response = await axios.patch(
         `http://localhost:3000/api/requisitions/${requisitionId}/fulfill`,
         {},
         { withCredentials: true }
       );
-  
+
       if (response.data?.message === "Requisition fulfilled successfully") {
-        setRequisitions(prev =>
-          prev.map(req =>
-            req._id === requisitionId 
-              ? { 
-                  ...req, 
-                  status: 'Fulfilled',
-                  fulfilledBy: response.data.requisition.fulfilledBy,
-                  fulfilledAt: response.data.requisition.fulfilledAt
-                } 
-              : req
-          )
-        );
+        // setRequisitions(prev =>
+        //   prev.map(req =>
+        //     req._id === requisitionId
+        //       ? {
+        //         ...req,
+        //         status: 'Fulfilled',
+        //         fulfilledBy: response.data.requisition.fulfilledBy,
+        //         fulfilledAt: response.data.requisition.fulfilledAt
+        //       }
+        //       : req
+        //   )
+        // );
+        fetchData();
         toast.success("Requisition marked as fulfilled successfully");
       }
     } catch (err) {
@@ -179,7 +188,8 @@ const RequisitionApprovals = () => {
         { withCredentials: true }
       );
 
-      setRequisitions(prev => [response.data, ...prev]);
+      // setRequisitions(prev => [response.data, ...prev]);
+      fetchData();
       setShowCreateModal(false);
       setNewRequisition({
         items: [],
@@ -423,6 +433,23 @@ const RequisitionApprovals = () => {
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   Purpose
                                 </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Submitted By
+                                </th>
+                                {(requisition.status !== "Pending") && (
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {dateKey[requisition.status]}
+                                  </th>
+                                )}
+                                {requisition.status === "Fulfilled" && (
+                                    <>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Fulfilled By
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Fulfilled at
+                                    </th></>
+                                )}
                               </tr>
                             </thead>
                             <tbody>
@@ -437,6 +464,24 @@ const RequisitionApprovals = () => {
                                   <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
                                     {item.purpose}
                                   </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                    {requisition?.user?.fullName}
+                                  </td>
+                                  {requisition.status !== "Pending"  && (
+                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {new Date(requisition?.[dateKey[requisition.status]])?.toLocaleTimeString()}
+                                      </td>
+                                  )}
+                                  {requisition.status === "Fulfilled"  && (
+                                     <>
+                                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                       {requisition?.fulfilledBy?.fullName || 'Unknown User'}
+                                     </td>
+                                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                       {new Date(requisition?.fulfilledAt)?.toLocaleTimeString()}
+                                     </td>
+                                   </>
+                                  )}
                                 </tr>
                               ))}
                             </tbody>
@@ -466,17 +511,7 @@ const RequisitionApprovals = () => {
                               </button>
                             </>
                           )}
-                          {requisition.status === 'Approved' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleFulfill(requisition._id);
-                              }}
-                              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                            >
-                              Mark as Fulfilled
-                            </button>
-                          )}
+
                         </div>
                       </td>
                     </tr>
@@ -488,8 +523,8 @@ const RequisitionApprovals = () => {
         </table>
       </div>
 
-     {/* Reject Dialog */}
-     {showRejectDialog && (
+      {/* Reject Dialog */}
+      {showRejectDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
@@ -533,11 +568,10 @@ const RequisitionApprovals = () => {
                 <button
                   onClick={handleReject}
                   disabled={!rejectionReason.trim()}
-                  className={`px-4 py-2 rounded-md text-white ${
-                    !rejectionReason.trim()
-                      ? 'bg-red-400 cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700'
-                  }`}
+                  className={`px-4 py-2 rounded-md text-white ${!rejectionReason.trim()
+                    ? 'bg-red-400 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700'
+                    }`}
                 >
                   Confirm Rejection
                 </button>
@@ -692,8 +726,8 @@ const RequisitionApprovals = () => {
                   onClick={handleCreateRequisition}
                   disabled={newRequisition.items.length === 0}
                   className={`px-4 py-2 rounded-md text-white ${newRequisition.items.length === 0
-                      ? 'bg-blue-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                    ? 'bg-blue-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                 >
                   Create Requisition

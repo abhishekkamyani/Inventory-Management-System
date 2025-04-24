@@ -63,7 +63,7 @@ const RequisitionForm = ({
         }
       );
   
-      console.log('Response:', response.data);
+      console.log('Requisitions Response:', response.data);
       
       onSuccess();
       setItems([{ item: '', quantity: 1, purpose: '' }]);

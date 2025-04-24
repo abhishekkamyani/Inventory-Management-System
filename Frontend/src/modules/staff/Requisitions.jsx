@@ -18,33 +18,34 @@ const Requisitions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  useEffect(() => {
-    const fetchRequisitions = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('http://localhost:3000/api/requisitions/approved', {
-          withCredentials: true
-        });
+  const fetchRequisitions = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:3000/api/requisitions/approved', {
+        withCredentials: true
+      });
+      console.log("----response----", response.data);
+      
+      // Transform the data to ensure consistent structure
+      const safeRequisitions = Array.isArray(response.data?.data) 
+        ? response.data.data.map(req => ({
+            ...req,
+            // Ensure fulfilledBy exists even if not populated
+            fulfilledBy: req.fulfilledBy || null
+          }))
+        : [];
         
-        // Transform the data to ensure consistent structure
-        const safeRequisitions = Array.isArray(response.data?.data) 
-          ? response.data.data.map(req => ({
-              ...req,
-              // Ensure fulfilledBy exists even if not populated
-              fulfilledBy: req.fulfilledBy || null
-            }))
-          : [];
-          
-        setRequisitions(safeRequisitions);
-      } catch (error) {
-        console.error('Error fetching requisitions:', error);
-        setRequisitions([]);
-        toast.error('Failed to load requisitions');
-      } finally {
-        setLoading(false);
-      }
-    };
+      setRequisitions(safeRequisitions);
+    } catch (error) {
+      console.error('Error fetching requisitions:', error);
+      setRequisitions([]);
+      toast.error('Failed to load requisitions');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchRequisitions();
   }, []);
 
@@ -58,18 +59,19 @@ const Requisitions = () => {
       );
 
       if (response.data?.message === "Requisition fulfilled successfully") {
-        setRequisitions(prev =>
-          prev.map(req =>
-            req._id === requisitionId 
-              ? { 
-                  ...req, 
-                  status: 'Fulfilled',
-                  // Don't depend on backend returning fulfilledBy
-                  // Just update the status
-                } 
-              : req
-          )
-        );
+        // setRequisitions(prev =>
+        //   prev.map(req =>
+        //     req._id === requisitionId 
+        //       ? { 
+        //           ...req, 
+        //           status: 'Fulfilled',
+        //           // Don't depend on backend returning fulfilledBy
+        //           // Just update the status
+        //         } 
+        //       : req
+        //   )
+        // );
+        fetchRequisitions();
         toast.success("Requisition marked as fulfilled");
       }
     } catch (err) {
@@ -246,6 +248,14 @@ const Requisitions = () => {
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   Purpose
                                 </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Submitted By
+                                </th>
+                                {requisition.status === "Fulfilled" && (
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Fulfilled at
+                                  </th>
+                                )}
                               </tr>
                             </thead>
                             <tbody>
@@ -260,6 +270,14 @@ const Requisitions = () => {
                                   <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
                                     {item.purpose}
                                   </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                    {requisition?.user?.fullName}
+                                  </td>
+                                  {requisition.status === "Fulfilled"  && (
+                                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {new Date(requisition?.fulfilledAt)?.toLocaleTimeString()}
+                                      </td>
+                                  )}
                                 </tr>
                               ))}
                             </tbody>
