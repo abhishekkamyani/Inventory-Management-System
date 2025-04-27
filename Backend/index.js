@@ -41,6 +41,7 @@ app.use("/api/users", userRoutes); // User management routes
 app.use("/api/supplier", supplierRoutes); // Supplier management routes
 app.use("/api/inventory", inventoryRoutes); // Inventory management routes
 // app.use("/api/requests", requestRoutes); // Request management routes
+
 app.use("/api/reports", reportRoutes); // Report management routes
 
 app.use("/api/requisitions", requisitionRoutes);
