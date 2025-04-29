@@ -320,7 +320,7 @@ const fetchPendingRequestsCount = async () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm">
+        <header className="bg-white shadow-sm relative z-10">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 ml-12 lg:ml-0">Admin Dashboard</h1>
             <div className="flex items-center space-x-4">
@@ -332,7 +332,7 @@ const fetchPendingRequestsCount = async () => {
                   <UserCircle size={24} />
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50">
                     <button className="block w-full px-4 py-2 text-left hover:bg-gray-100">Account Settings</button>
                     <button className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" onClick={handleLogout}>Logout</button>
                   </div>

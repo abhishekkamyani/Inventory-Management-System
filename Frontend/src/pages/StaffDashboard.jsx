@@ -6,9 +6,8 @@ import { useNavigate } from 'react-router-dom';
 // Import components
 import StockLevels from '../modules/staff/StockLevels';
 import Requisitions from '../modules/staff/Requisitions';
-import StockAudit from '../modules/staff/StockAudit';
-import SupplierCommunication from '../modules/staff/SupplierCommunication';
 import QRScanner from '../modules/admin/QRScanner';
+import Reports from '../modules/staff/Reports';
 
 const StaffDashboard = () => {
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
@@ -19,12 +18,11 @@ const StaffDashboard = () => {
     pendingRequisitions: 0,
     lowStockItems: 0,
   });
-  const [lowStockItems, setLowStockItems] = useState([]); // State for low stock items
-  const [categories, setCategories] = useState([]); // State for categories
+  const [lowStockItems, setLowStockItems] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const navigate = useNavigate();
 
-  // Fetch total items count from the backend
   const fetchTotalItemsCount = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/inventory/total-items', {
@@ -39,7 +37,6 @@ const StaffDashboard = () => {
     }
   };
 
-  // Fetch low stock items from the backend
   const fetchLowStockItems = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/inventory/low-stock-items', {
@@ -47,42 +44,40 @@ const StaffDashboard = () => {
       });
 
       if (response.data.success) {
-        setLowStockItems(response.data.data); // Update state with low stock items
+        setLowStockItems(response.data.data);
         setStats((prevStats) => ({
           ...prevStats,
-          lowStockItems: response.data.data.length, // Update lowStockItems count
+          lowStockItems: response.data.data.length,
         }));
       } else {
         console.error('Error fetching low stock items:', response.data.message);
-        setLowStockItems([]); // Set to empty array in case of an error
+        setLowStockItems([]);
         setStats((prevStats) => ({
           ...prevStats,
-          lowStockItems: 0, // Reset lowStockItems count
+          lowStockItems: 0,
         }));
       }
     } catch (err) {
       console.error('Error fetching low stock items:', err);
-      setLowStockItems([]); // Set to empty array in case of an error
+      setLowStockItems([]);
       setStats((prevStats) => ({
         ...prevStats,
-        lowStockItems: 0, // Reset lowStockItems count
+        lowStockItems: 0,
       }));
     }
   };
 
-  // Fetch categories from the backend
   const fetchCategories = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/inventory/categories', {
         withCredentials: true,
       });
-      setCategories(response.data); // Update categories state
+      setCategories(response.data);
     } catch (err) {
       console.error('Error fetching categories:', err);
     }
   };
 
-  // Fetch initial stats for the dashboard
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -100,9 +95,9 @@ const StaffDashboard = () => {
     };
 
     fetchStats();
-    fetchTotalItemsCount(); // Fetch total items count separately
-    fetchLowStockItems(); // Fetch low stock items
-    fetchCategories(); // Fetch categories
+    fetchTotalItemsCount();
+    fetchLowStockItems();
+    fetchCategories();
   }, []);
 
   const handleLogout = async () => {
@@ -155,9 +150,8 @@ const StaffDashboard = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {Array.isArray(lowStockItems) && lowStockItems.map((item, index) => {
-                      // Find the category name based on the category ID
                       const category = categories.find((cat) => cat._id === item.category);
-                      const categoryName = category ? category.name : "N/A"; // Fallback to "N/A" if category not found
+                      const categoryName = category ? category.name : "N/A";
 
                       return (
                         <tr key={index}>
@@ -178,10 +172,8 @@ const StaffDashboard = () => {
         return <StockLevels />;
       case 'requisitions':
         return <Requisitions />;
-      case 'stock-audit':
-        return <StockAudit />;
-      case 'supplier-communication':
-        return <SupplierCommunication />;
+      case 'reports':
+        return <Reports />;
       case 'qr-scanner':
         return <QRScanner />;
       default:
@@ -208,19 +200,43 @@ const StaffDashboard = () => {
         <div className="p-4">
           <div className="text-xl font-bold mb-8">SIBA IMS</div>
           <nav className="space-y-2">
-            <SidebarItem icon={<LayoutDashboard size={20} />} text="Dashboard" active={selectedMenu === 'dashboard'} onClick={() => { setSelectedMenu('dashboard'); setIsMobileMenuOpen(false); }} />
-            <SidebarItem icon={<BoxesIcon size={20} />} text="Stock Levels" active={selectedMenu === 'stock-levels'} onClick={() => { setSelectedMenu('stock-levels'); setIsMobileMenuOpen(false); }} />
-            <SidebarItem icon={<ClipboardList size={20} />} text="Requisitions" active={selectedMenu === 'requisitions'} onClick={() => { setSelectedMenu('requisitions'); setIsMobileMenuOpen(false); }} />
-            <SidebarItem icon={<FileText size={20} />} text="Stock Audit" active={selectedMenu === 'stock-audit'} onClick={() => { setSelectedMenu('stock-audit'); setIsMobileMenuOpen(false); }} />
-            <SidebarItem icon={<FileText size={20} />} text="Supplier Communication" active={selectedMenu === 'supplier-communication'} onClick={() => { setSelectedMenu('supplier-communication'); setIsMobileMenuOpen(false); }} />
-            <SidebarItem icon={<FileText size={20} />} text="QR Code Scanner" active={selectedMenu === 'qr-scanner'} onClick={() => { setSelectedMenu('qr-scanner'); setIsMobileMenuOpen(false); }} />
+            <SidebarItem 
+              icon={<LayoutDashboard size={20} />} 
+              text="Dashboard" 
+              active={selectedMenu === 'dashboard'} 
+              onClick={() => { setSelectedMenu('dashboard'); setIsMobileMenuOpen(false); }} 
+            />
+            <SidebarItem 
+              icon={<BoxesIcon size={20} />} 
+              text="Stock Levels" 
+              active={selectedMenu === 'stock-levels'} 
+              onClick={() => { setSelectedMenu('stock-levels'); setIsMobileMenuOpen(false); }} 
+            />
+            <SidebarItem 
+              icon={<ClipboardList size={20} />} 
+              text="Requisitions" 
+              active={selectedMenu === 'requisitions'} 
+              onClick={() => { setSelectedMenu('requisitions'); setIsMobileMenuOpen(false); }} 
+            />
+            <SidebarItem 
+              icon={<FileText size={20} />} 
+              text="Reports" 
+              active={selectedMenu === 'reports'} 
+              onClick={() => { setSelectedMenu('reports'); setIsMobileMenuOpen(false); }} 
+            />
+            <SidebarItem 
+              icon={<FileText size={20} />} 
+              text="QR Code Scanner" 
+              active={selectedMenu === 'qr-scanner'} 
+              onClick={() => { setSelectedMenu('qr-scanner'); setIsMobileMenuOpen(false); }} 
+            />
           </nav>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm">
+        <header className="bg-white shadow-sm relative z-10">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 ml-12 lg:ml-0">Staff Dashboard</h1>
             <div className="flex items-center space-x-4">
@@ -228,20 +244,33 @@ const StaffDashboard = () => {
                 <Bell size={20} />
               </button>
               <div className="relative">
-                <button className="p-2 rounded-full hover:bg-gray-100" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                <button 
+                  className="p-2 rounded-full hover:bg-gray-100 dropdown-button" 
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
                   <UserCircle size={24} />
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden">
-                    <button className="block w-full px-4 py-2 text-left hover:bg-gray-100">Account Settings</button>
-                    <button className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" onClick={handleLogout}>Logout</button>
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50">
+                    <button 
+                      className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Account Settings
+                    </button>
+                    <button 
+                      className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" 
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </button>
                   </div>
                 )}
               </div>
             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-auto p-4 sm:p-6 relative z-0">
           {renderContent()}
         </main>
       </div>

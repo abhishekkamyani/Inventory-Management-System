@@ -10,7 +10,8 @@ import {
   rejectRequisition,
   fulfillRequisition,
   getPendingRequisitionsCount,
-  getApprovedRequisitions
+  getApprovedRequisitions,getStaffFulfilledRequisitions,
+  exportStaffRequisitionsReport
 } from "../controllers/requisitionController.js";
 import { verifyAuth, verifyAdmin, verifyStaff } from "../middleware/authMiddleware.js";
 
@@ -27,6 +28,10 @@ router.patch("/:id/reject", verifyAuth, verifyAdmin, rejectRequisition);
 
 // Fulfill requisition (staff only) - Changed from admin to staff
 router.patch("/:id/fulfill", verifyAuth, verifyStaff, fulfillRequisition);
+// Add these new routes
+router.get('/staff/fulfilled', verifyAuth, verifyStaff, getStaffFulfilledRequisitions);
+router.get('/staff/export', verifyAuth, verifyStaff, exportStaffRequisitionsReport);
+
 
 // Get all requisitions (admin only)
 router.get("/", verifyAuth, verifyAdmin, getRequisitions);

@@ -22,6 +22,12 @@ import moment from 'moment';
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
+const dateKey = {
+  "Approved": "approvedAt",
+  "Rejected": "rejectedAt",
+  "Fulfilled": "fulfilledAt"
+};
+
 export default function Reports() {
   const [reportType, setReportType] = useState('daily');
   const [dateRange, setDateRange] = useState([moment().startOf('day'), moment().endOf('day')]);
@@ -29,6 +35,8 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [requisitions, setRequisitions] = useState([]);
   const [expandedRequisition, setExpandedRequisition] = useState(null);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [selectedRequisition, setSelectedRequisition] = useState(null);
 
   const fetchReportData = async () => {
     try {
@@ -67,21 +75,84 @@ export default function Reports() {
     if (dates && dates.length === 2) setDateRange(dates);
   };
 
+  const handleApprove = async (requisitionId) => {
+    try {
+      setLoading(true);
+      await axios.put(`http://localhost:3000/api/requisitions/${requisitionId}/approve`, {}, { withCredentials: true });
+      message.success('Requisition approved successfully');
+      fetchReportData();
+    } catch (error) {
+      console.error('Error approving requisition:', error);
+      message.error('Failed to approve requisition');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReject = async (reason) => {
+    try {
+      setLoading(true);
+      await axios.put(`http://localhost:3000/api/requisitions/${selectedRequisition}/reject`, 
+        { rejectionReason: reason }, 
+        { withCredentials: true }
+      );
+      message.success('Requisition rejected successfully');
+      setShowRejectDialog(false);
+      fetchReportData();
+    } catch (error) {
+      console.error('Error rejecting requisition:', error);
+      message.error('Failed to reject requisition');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      requisitions.map(req => ({
+    // Prepare data with all item details in a single row
+    const dataForExport = requisitions.map(req => {
+      // Combine all items into a single string with line breaks
+      const itemsDetails = req.items.map(item => 
+        `${item.name} (Qty: ${item.quantity}, Purpose: ${item.purpose})` +
+        (req.status === 'Fulfilled' ? 
+          `, Fulfilled At: ${moment(req.fulfilledAt).format('MMM D, YYYY h:mm A')}` +
+          `, By: ${req.fulfilledBy?.fullName || 'N/A'}` : 
+          '')
+      ).join('\n');
+  
+      return {
         'ID': req._id.slice(-6),
         'Requested By': req.user?.fullName || 'N/A',
-        'Items': req.items.map(i => `${i.name} (x${i.quantity})`).join(', '),
+        'Requested At': moment(req.createdAt).format('MMM D, YYYY h:mm A'),
         'Status': req.status,
-        'Created': moment(req.createdAt).format('YYYY-MM-DD')
-      }))
-    );
+        'Items Details': itemsDetails,
+        'Rejection Reason': req.rejectionReason || 'N/A'
+      };
+    });
+  
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(dataForExport);
+  
+    // Set column widths for better readability
+    const wscols = [
+      { wch: 8 },  // ID
+      { wch: 20 }, // Requested By
+      { wch: 20 }, // Requested At
+      { wch: 12 }, // Status
+      { wch: 60 }, // Items Details (wider for multiple lines)
+      { wch: 30 }  // Rejection Reason
+    ];
+    ws['!cols'] = wscols;
+  
+    // Create workbook
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, worksheet, 'Requisitions');
+    XLSX.utils.book_append_sheet(wb, ws, 'Requisitions');
+  
+    // Generate and save the Excel file
     const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    saveAs(new Blob([buf], { type: 'application/octet-stream' }),
-           `requisitions_${moment().format('YYYYMMDD_HHmmss')}.xlsx`);
+    saveAs(
+      new Blob([buf], { type: 'application/octet-stream' }),
+      `requisitions_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
+    );
   };
 
   const getBadge = (status) => {
@@ -184,32 +255,132 @@ export default function Reports() {
                         <h5 className="font-medium mb-2">Request Info</h5>
                         <p><strong>By:</strong> {record.user?.fullName}</p>
                         <p><strong>At:</strong> {moment(record.createdAt).format('lll')}</p>
+                        {record.rejectionReason && (
+                          <p><strong>Rejection Reason:</strong> {record.rejectionReason}</p>
+                        )}
                       </Col>
                       <Col xs={24} md={12}>
                         <h5 className="font-medium mb-2">Items</h5>
-                        { record.items.map((it,i)=>(
-                          <p key={i}>{it.name} x{it.quantity}</p>
-                        )) }
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead>
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Item
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Quantity
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Purpose
+                              </th>
+                              {(record.status !== "Pending") && (
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  {dateKey[record.status]}
+                                </th>
+                              )}
+                              {record.status === "Fulfilled" && (
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Fulfilled By
+                                </th>
+                              )}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {record.items.map((item, index) => (
+                              <tr key={index}>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                  {item.name}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                  {item.quantity}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                  {item.purpose}
+                                </td>
+                                {record.status !== "Pending" && (
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                    {moment(record[dateKey[record.status]]).format('lll')}
+                                  </td>
+                                )}
+                                {record.status === "Fulfilled" && (
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                    {record.fulfilledBy?.fullName || 'Unknown User'}
+                                  </td>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </Col>
                     </Row>
-                    { record.rejectionReason && (
-                      <div className="mt-4 p-3 bg-red-50 rounded">
-                        <strong>Rejection:</strong> {record.rejectionReason}
+                    {record.status === 'Pending' && (
+                      <div className="flex justify-end space-x-2 mt-4">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedRequisition(record._id);
+                            setShowRejectDialog(true);
+                          }}
+                          danger
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          type="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApprove(record._id);
+                          }}
+                        >
+                          Approve
+                        </Button>
                       </div>
-                    ) }
+                    )}
                   </div>
                 ),
                 rowExpandable: () => true,
-                expandedRowKeys: expandedRequisition?[expandedRequisition]:[]
+                expandedRowKeys: expandedRequisition ? [expandedRequisition] : []
               }}
             />
           ) : (
             <div className="text-center p-8 text-gray-500">
-              {loading? null : 'No data — generate a report.'}
+              {loading ? null : 'No data — generate a report.'}
             </div>
           )}
         </div>
       </Card>
+
+      {/* Reject Dialog */}
+      {showRejectDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4">Reject Requisition</h3>
+            <textarea
+              className="w-full p-2 border rounded mb-4"
+              placeholder="Enter rejection reason..."
+              rows={4}
+              id="rejectionReason"
+            />
+            <div className="flex justify-end space-x-2">
+              <Button onClick={() => setShowRejectDialog(false)}>Cancel</Button>
+              <Button 
+                type="primary" 
+                danger
+                onClick={() => {
+                  const reason = document.getElementById('rejectionReason').value;
+                  if (reason) {
+                    handleReject(reason);
+                  } else {
+                    message.error('Please enter a rejection reason');
+                  }
+                }}
+              >
+                Confirm Reject
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

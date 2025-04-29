@@ -549,3 +549,106 @@ export const getPendingRequisitionsCount = async (req, res) => {
     });
   }
 };
+
+
+
+
+// controllers/requisitionController.js
+
+// @desc    Get staff's fulfilled requisitions
+// @route   GET /api/requisitions/staff/fulfilled
+// @access  Private/Staff
+export const getStaffFulfilledRequisitions = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const requisitions = await Requisition.find({
+      fulfilledBy: userId,
+      status: 'Fulfilled'
+    })
+    .populate('user', 'fullName email')
+    .populate('items.item', 'name')
+    .sort({ fulfilledAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: requisitions.length,
+      data: requisitions
+    });
+  } catch (error) {
+    console.error('Error fetching staff fulfilled requisitions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch fulfilled requisitions',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// @desc    Export staff requisitions report
+// @route   GET /api/requisitions/staff/export
+// @access  Private/Staff
+export const exportStaffRequisitionsReport = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { startDate, endDate, format = 'excel' } = req.query;
+
+    // Build query
+    const query = {
+      fulfilledBy: userId,
+      status: 'Fulfilled'
+    };
+
+    // Add date range if provided
+    if (startDate && endDate) {
+      query.fulfilledAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    const requisitions = await Requisition.find(query)
+      .populate('user', 'fullName email')
+      .populate('items.item', 'name')
+      .sort({ fulfilledAt: -1 });
+
+    if (format === 'excel') {
+      // Prepare Excel data
+      const reportData = requisitions.map(req => ({
+        'Requisition ID': req._id.toString().slice(-6),
+        'Requested By': req.user.fullName,
+        'Request Date': req.createdAt.toLocaleDateString(),
+        'Fulfillment Date': req.fulfilledAt.toLocaleDateString(),
+        'Total Items': req.items.reduce((sum, item) => sum + item.quantity, 0),
+        'Items': req.items.map(i => `${i.item.name} (${i.quantity})`).join(', ')
+      }));
+
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(reportData);
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Fulfilled Requisitions');
+
+      // Generate buffer
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      // Set headers
+      res.setHeader('Content-Disposition', 'attachment; filename=fulfilled_requisitions.xlsx');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+    } else {
+      // JSON format
+      res.status(200).json({
+        success: true,
+        count: requisitions.length,
+        data: requisitions
+      });
+    }
+  } catch (error) {
+    console.error('Error exporting staff requisitions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export requisitions',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
