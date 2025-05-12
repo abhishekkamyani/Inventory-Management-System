@@ -7,7 +7,8 @@ import cookieParser from "cookie-parser";
 // Import routes
 import UserRouter from "./routes/auth.js";
 import requisitionRoutes from "./routes/requisitionRoutes.js";
-
+// Add this with your other route imports
+import directorRoutes from "./routes/directorRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
 import qrRoutes from "./routes/qrRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -46,6 +47,8 @@ app.use("/api/reports", reportRoutes); // Report management routes
 
 app.use("/api/requisitions", requisitionRoutes);
 
+// Add this with your other route middlewares
+app.use("/api/director", directorRoutes);
 
 // MongoDB connection (unchanged)
 mongoose

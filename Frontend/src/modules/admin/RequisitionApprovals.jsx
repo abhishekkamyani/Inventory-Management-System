@@ -304,9 +304,7 @@ const RequisitionApprovals = () => {
           >
             <FilePlus className="mr-2 h-4 w-4" /> New Requisition
           </button>
-          <button className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-            <Download className="mr-2 h-4 w-4" /> Export
-          </button>
+          
         </div>
       </div>
 

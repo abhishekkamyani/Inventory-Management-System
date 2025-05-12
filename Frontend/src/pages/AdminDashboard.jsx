@@ -11,7 +11,6 @@ import Requisitions from '../modules/admin/RequisitionApprovals';
 import Departments from '../modules/admin/Departments';
 import Reports from '../modules/admin/Reports';
 import Settings from '../modules/admin/Settings';
-import AuditLogs from '../modules/admin/AdminAuditLogs';
 
 const AdminDashboard = () => {
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
@@ -44,24 +43,24 @@ const AdminDashboard = () => {
   };
 
   // Add this function to fetch pending requests count
-const fetchPendingRequestsCount = async () => {
-  try {
-    const response = await axios.get('http://localhost:3000/api/requisitions/pending-count', {
-      withCredentials: true,
-    });
-    setStats((prevStats) => ({
-      ...prevStats,
-      pendingRequests: response.data.count,
-    }));
-  } catch (err) {
-    console.error('Error fetching pending requests count:', err);
-    // You can keep the default value or set it to 0
-    setStats((prevStats) => ({
-      ...prevStats,
-      pendingRequests: 0,
-    }));
-  }
-};
+  const fetchPendingRequestsCount = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/requisitions/pending-count', {
+        withCredentials: true,
+      });
+      setStats((prevStats) => ({
+        ...prevStats,
+        pendingRequests: response.data.count,
+      }));
+    } catch (err) {
+      console.error('Error fetching pending requests count:', err);
+      // You can keep the default value or set it to 0
+      setStats((prevStats) => ({
+        ...prevStats,
+        pendingRequests: 0,
+      }));
+    }
+  };
 
   // Fetch total items count from the backend
   const fetchTotalItemsCount = async () => {
@@ -277,8 +276,6 @@ const fetchPendingRequestsCount = async () => {
         return <Requisitions />;
       case 'departments':
         return <Departments />;
-      case 'auditlogs':
-        return <AuditLogs />;
       case 'reports':
         return <Reports />;
       case 'settings':
@@ -311,7 +308,6 @@ const fetchPendingRequestsCount = async () => {
             <SidebarItem icon={<Users size={20} />} text="User Management" active={selectedMenu === 'users'} onClick={() => { setSelectedMenu('users'); setIsMobileMenuOpen(false); }} />
             <SidebarItem icon={<BoxesIcon size={20} />} text="Inventory" active={selectedMenu === 'inventory'} onClick={() => { setSelectedMenu('inventory'); setIsMobileMenuOpen(false); }} />
             <SidebarItem icon={<ClipboardList size={20} />} text="Requisitions" active={selectedMenu === 'requisitions'} onClick={() => { setSelectedMenu('requisitions'); setIsMobileMenuOpen(false); }} />
-            <SidebarItem icon={<FileText size={20} />} text="Audit Logs" active={selectedMenu === 'auditlogs'} onClick={() => { setSelectedMenu('auditlogs'); setIsMobileMenuOpen(false); }} />
             <SidebarItem icon={<FileText size={20} />} text="Reports" active={selectedMenu === 'reports'} onClick={() => { setSelectedMenu('reports'); setIsMobileMenuOpen(false); }} />
             <SidebarItem icon={<SettingsIcon size={20} />} text="Settings" active={selectedMenu === 'settings'} onClick={() => { setSelectedMenu('settings'); setIsMobileMenuOpen(false); }} />
           </nav>
