@@ -48,7 +48,6 @@ const SignUp = () => {
   const navigate = useNavigate();
 
 
-
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
 
@@ -69,11 +68,9 @@ const SignUp = () => {
       const response = await axios.post('http://localhost:3000/auth/signup', data);
 
       if (response.status === 201) {
-        setSuccess('Sign Up successful! Redirecting to login...');
+        setSuccess('Sign Up successful! Please check your email to verify your account.');
         setError('');
-        setTimeout(() => {
-          navigate('/Signin'); // Navigate to login page after successful sign-up
-        }, 2000);
+        // Don't redirect immediately - wait for verification
       } else {
         setError('An unexpected error occurred. Please try again.');
       }

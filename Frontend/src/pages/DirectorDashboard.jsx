@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import RequisitionHistory from '../modules/director/RequisitionHistory';
 import NewRequisition from '../modules/director/NewRequisition';
 import TrackRequisitions from '../modules/director/TrackRequisitions';
-import DirectorSettings from '../modules/director/Settings';
+import DirectorSettings from '../modules/admin/Settings';
 import RequisitionDetail from '../modules/director/RequisitionDetail';
 
 const DirectorDashboard = () => {

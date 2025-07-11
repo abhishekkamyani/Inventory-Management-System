@@ -5,12 +5,54 @@ import { User } from "../models/User.js";
 // const crypto = require('crypto');
 // const nodemailer = require('nodemailer');
 import dotenv from 'dotenv';
-
-
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 dotenv.config();
+
+
+// Create reusable transporter object using the default SMTP transport
+const transporter = nodemailer.createTransport({
+  service: 'Gmail',
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+
+// Helper function to send verification email
+const sendVerificationEmail = async (email, verificationToken, fullName) => {
+  const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+  
+  try {
+    await transporter.sendMail({
+      from: `"Support Team" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Verify Your Email Address',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1a237e;">Email Verification</h2>
+          <p>Hello ${fullName},</p>
+          <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
+          <a href="${verificationUrl}" 
+             style="display: inline-block; padding: 10px 20px; background-color: #1a237e; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">
+            Verify Email
+          </a>
+          <p>If you didn't create an account, you can safely ignore this email.</p>
+          <p style="margin-top: 30px; font-size: 12px; color: #666;">This link will expire in 24 hours.</p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    throw new Error('Failed to send verification email');
+  }
+};
+
+
 // Signup Controller
+// Signup Controller with Email Verification
 export const signup = async (req, res) => {
   try {
     const { fullName, email, password, confirmPassword, role } = req.body;
@@ -48,27 +90,124 @@ export const signup = async (req, res) => {
       return res.status(409).json({ message: "User already exists. Please log in." });
     }
 
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(20).toString('hex');
+    const verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+
     // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(trimmedPassword, salt);
 
-    // Create new user
+    // Create new user (not verified)
     const newUser = new User({
       fullName: trimmedFullName,
       email: trimmedEmail,
       password: hashedPassword,
       role: role || "Admin",
+      isVerified: false,
+      verificationToken,
+      verificationTokenExpires,
     });
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully!" });
+    // Send verification email
+    await sendVerificationEmail(trimmedEmail, verificationToken, trimmedFullName);
+
+    res.status(201).json({ 
+      message: "Registration successful! Please check your email to verify your account.",
+    });
   } catch (error) {
     console.error("Error in signup:", error);
     res.status(500).json({ message: "Internal server error. Please try again later." });
   }
 };
 
+
+
+// Email Verification Controller
+export const verifyEmail = async (req, res) => {
+  try {
+    const token = req.query.token?.trim();
+    console.log("Token from query:", token);
+
+    // Step 1: Check if token is missing
+    if (!token) {
+      return res.status(400).json({ message: "Verification token is required." });
+    }
+
+    // Step 2: Try to find user with valid (non-expired) token
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: Date.now() },
+    });
+
+    if (user) {
+      user.isVerified = true;
+      user.verificationToken = undefined;
+      user.verificationTokenExpires = undefined;
+      await user.save();
+
+      return res.status(200).json({ message: "Email verified successfully! You can now log in." });
+    }
+
+    // Step 3: If no valid token found, maybe already verified?
+    const alreadyVerifiedUser = await User.findOne({
+      isVerified: true,
+      email: { $exists: true }, // ensure it's a valid user
+    });
+
+    if (alreadyVerifiedUser) {
+      return res.status(200).json({ message: "Email already verified. Please log in." });
+    }
+
+    // Step 4: If all else fails, it's invalid or expired
+    return res.status(400).json({ message: "Invalid or expired verification token." });
+
+  } catch (error) {
+    console.error("Error in verifyEmail:", error);
+    return res.status(500).json({ message: "Internal server error during email verification." });
+  }
+};
+
+
+// Resend Verification Email Controller
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email is already verified." });
+    }
+
+    // Generate new verification token
+    const verificationToken = crypto.randomBytes(20).toString('hex');
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    await user.save();
+
+    // Send verification email
+    await sendVerificationEmail(user.email, verificationToken, user.fullName);
+
+    res.status(200).json({ 
+      message: "Verification email resent successfully. Please check your inbox.",
+    });
+  } catch (error) {
+    console.error("Error in resendVerificationEmail:", error);
+    res.status(500).json({ message: "Internal server error. Please try again later." });
+  }
+};   
+
+// Update Signin Controller to check for verification
 export const signin = async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -88,6 +227,14 @@ export const signin = async (req, res) => {
     const existingUser = await User.findOne({ email: trimmedEmail });
     if (!existingUser) {
       return res.status(404).json({ message: "Invalid email or password." });
+    }
+
+    // Check if email is verified
+    if (!existingUser.isVerified) {
+      return res.status(403).json({ 
+        message: "Email not verified. Please check your inbox for verification instructions.",
+        resendLink: true,
+      });
     }
 
     // Check if account is inactive
@@ -162,7 +309,7 @@ export const logout = async (req, res) => {
 // Current User Controller
 export const getCurrentUser = async (req, res) => {
   try {
-    console.log(req);
+   
 
     const user = await User.findById(req.user.userId);
     if (!user) {
@@ -186,7 +333,7 @@ export const getCurrentUser = async (req, res) => {
 //Get Roles Controller
 export const getRoles = async (req, res) => {
   try {
-    console.log(req);
+    
 
     const isAdmin = await User.findOne({ role: "Admin" });
 
@@ -201,6 +348,7 @@ export const getRoles = async (req, res) => {
     res.status(500).json({ message: "Internal server error. Please try again later." });
   }
 }
+
 
 // Forgot Password Controller
 export const forgotPassword = async (req, res) => {

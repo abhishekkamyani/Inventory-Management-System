@@ -1,5 +1,6 @@
 import { User } from "../models/User.js";
 import bcrypt from "bcrypt"; // Import bcrypt
+import { generateEmailToAdmin } from "../utils.js";
 // Get all users
 export const getUsers = async (req, res) => {
   try {
@@ -23,21 +24,23 @@ export const getUserById = async (req, res) => {
   }
 };
 
+
+
 // Create new user (Register)
 export const createUser = async (req, res) => {
   const { fullName, email, password, role } = req.body;
 
   try {
-    // Check if user already exists
+    // 1. Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash password
+    // 2. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // 3. Create new user (default status: Deactive for non-admins)
     const newUser = new User({
       fullName,
       email,
@@ -46,13 +49,31 @@ export const createUser = async (req, res) => {
       status: role === "Admin" ? "Active" : "Deactive",
     });
 
+    // 4. Save user to DB
     await newUser.save();
+
+    // 5. Notify admin if user is not an admin
+    if (role !== "Admin") {
+      const subject = "🆕 New User Registration Request";
+      const message = `
+        <h3>A new user has registered and needs activation</h3>
+        <p><strong>Name:</strong> ${fullName}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Role:</strong> ${role}</p>
+        <p>Status: <strong>Deactive</strong></p>
+        <p>Please review and activate the user in the admin dashboard.</p>
+      `;
+      await generateEmailToAdmin(subject, message);
+    }
+
+    // 6. Respond to the client
     res.status(201).json({ message: "User created successfully", user: newUser });
   } catch (error) {
-    console.error("Error in createUser:", error); // Log the error for debugging
+    console.error("Error in createUser:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 // get active users count for dashboard
 export const getActiveUsersCount = async (req, res) => {
@@ -136,7 +157,7 @@ export const activateUser = async (req, res) => {
   }
 };
 
-import asyncHandler from 'express-async-handler';
+
 
 
 // @desc    Get current user

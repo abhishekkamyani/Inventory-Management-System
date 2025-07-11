@@ -6,8 +6,7 @@ import { useNavigate } from 'react-router-dom';
 // Import faculty-specific components
 import RequisitionHistory from '../modules/faculty/RequisitionHistory';
 import NewRequisition from '../modules/faculty/NewRequisition';
-import TrackOrders from '../modules/faculty/TrackRequisitions';
-import FacultySettings from '../modules/faculty/Settings';
+import FacultySettings from '../modules/admin/Settings';
 
 const FacultyDashboard = () => {
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
@@ -166,8 +165,6 @@ const fetchRecentRequisitions = async () => {
         }} />;
       case 'requisition-history':
         return <RequisitionHistory />;
-      case 'track-orders':
-        return <TrackOrders />;
       case 'settings':
         return <FacultySettings />;
       default:
@@ -217,12 +214,6 @@ const fetchRecentRequisitions = async () => {
               onClick={() => { setSelectedMenu('requisition-history'); setIsMobileMenuOpen(false); }} 
             />
             <SidebarItem 
-              icon={<Package size={20} />} 
-              text="Track Orders" 
-              active={selectedMenu === 'track-orders'} 
-              onClick={() => { setSelectedMenu('track-orders'); setIsMobileMenuOpen(false); }} 
-            />
-            <SidebarItem 
               icon={<UserCircle size={20} />} 
               text="Settings" 
               active={selectedMenu === 'settings'} 
@@ -240,7 +231,6 @@ const fetchRecentRequisitions = async () => {
               {selectedMenu === 'dashboard' && 'Faculty Dashboard'}
               {selectedMenu === 'new-requisition' && 'New Requisition'}
               {selectedMenu === 'requisition-history' && 'Requisition History'}
-              {selectedMenu === 'track-orders' && 'Track Orders'}
               {selectedMenu === 'settings' && 'Settings'}
             </h1>
             <div className="flex items-center space-x-4">

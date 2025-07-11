@@ -6,7 +6,7 @@ import SignUp from './pages/SignUp';
 import SignIn from './pages/SignIn';
 import AdminDashboard from './pages/AdminDashboard';
 import StaffDashboard from './pages/StaffDashboard';
-
+import VerifyEmail from './pages/VerifyEmail';
 import FacultyDashboard from './pages/FacultyDashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -26,6 +26,7 @@ function App() {
       <Route path='/forgot-password' element={<ForgotPassword />} />
       <Route path='/reset-password/:token' element={<ResetPassword/>} />
       <Route path='/directordashboard' element={<DirectorDashboard/>} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       
     </Routes>
   </Router>

@@ -33,6 +33,16 @@ const UserSchema = new mongoose.Schema(
         return this.role === "Admin" ? "Active" : "Deactive";
       },
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+    },
+    verificationTokenExpires: {
+      type: Date,
+    },
     passwordResetToken: {
       type: String,
       default: null,

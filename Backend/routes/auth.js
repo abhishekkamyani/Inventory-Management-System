@@ -5,7 +5,8 @@ import {
   getCurrentUser,
   getRoles,
   forgotPassword,
-  resetPassword,logout
+  resetPassword,logout, verifyEmail,
+  resendVerificationEmail
 } from "../controllers/authController.js"; // Importing the necessary controllers
 
 import { activateUser } from "../controllers/userController.js";
@@ -32,5 +33,10 @@ router.patch("/activate/:userId", verifyAuth, verifyAdmin, activateUser);
 router.post("/forgot-password", forgotPassword); // Route for sending reset link
 router.post("/reset-password/:token", resetPassword); // Route for resetting the password
 //router.post('/reset-password/:token', verifyResetToken);
+
+
+// New email verification routes
+router.get('/verify-email', verifyEmail); // GET /auth/verify-email?token=xxx
+router.post('/resend-verification', resendVerificationEmail); 
 
 export default router;
