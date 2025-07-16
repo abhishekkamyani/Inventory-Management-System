@@ -652,3 +652,65 @@ export const exportStaffRequisitionsReport = async (req, res) => {
     });
   }
 };
+
+
+// controllers/requisitionController.js
+
+export const getMonthlyRequisitions = async (req, res) => {
+  try {
+    // Get current date and calculate start of current year
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    
+    // Aggregate requisitions by month
+    const monthlyData = await Requisition.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startOfYear }
+        }
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          month: "$_id",
+          count: 1,
+          _id: 0
+        }
+      },
+      {
+        $sort: { month: 1 }
+      }
+    ]);
+
+    // Map month numbers to names
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const formattedData = monthNames.map((name, index) => {
+      const monthData = monthlyData.find(item => item.month === index + 1);
+      return {
+        month: name,
+        requests: monthData ? monthData.count : 0
+      };
+    });
+
+    // Only return current year's months up to current month
+    const currentMonth = now.getMonth();
+    const result = formattedData.slice(0, currentMonth + 1);
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error fetching monthly requisitions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch monthly requisitions',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

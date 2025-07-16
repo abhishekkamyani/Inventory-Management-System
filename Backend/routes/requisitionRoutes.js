@@ -11,7 +11,7 @@ import {
   fulfillRequisition,
   getPendingRequisitionsCount,
   getApprovedRequisitions,getStaffFulfilledRequisitions,
-  exportStaffRequisitionsReport
+  exportStaffRequisitionsReport,getMonthlyRequisitions
 } from "../controllers/requisitionController.js";
 import { verifyAuth, verifyAdmin, verifyStaff } from "../middleware/authMiddleware.js";
 
@@ -50,4 +50,5 @@ router.patch('/:id/cancel', verifyAuth, cancelRequisition);
 // Staff routes
 router.get('/approved', verifyAuth, verifyStaff, getApprovedRequisitions);
 
+router.get('/monthly-stats', verifyAuth, getMonthlyRequisitions);
 export default router;

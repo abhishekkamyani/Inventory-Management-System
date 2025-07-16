@@ -158,6 +158,7 @@ const AdminDashboard = () => {
       await fetchCategories(); // Fetch categories
       await fetchPendingRequestsCount();
       await fetchInventoryByCategory();
+      await fetchMonthlyRequisitions()
     };
 
     fetchData();
@@ -165,14 +166,26 @@ const AdminDashboard = () => {
 
 
 
-  const monthlyRequests = [
-    { month: 'Jan', requests: 65 },
-    { month: 'Feb', requests: 45 },
-    { month: 'Mar', requests: 85 },
-    { month: 'Apr', requests: 55 },
-    { month: 'May', requests: 70 },
-    { month: 'Jun', requests: 90 }
-  ];
+
+  const [monthlyRequests, setMonthlyRequests] = useState([]);
+  const fetchMonthlyRequisitions = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/requisitions/monthly-stats', {
+        withCredentials: true,
+      });
+
+      if (response.data.success) {
+        setMonthlyRequests(response.data.data);
+      } else {
+        console.error('Failed to fetch monthly requisitions:', response.data.message);
+        setMonthlyRequests([]);
+      }
+    } catch (err) {
+      console.error('Error fetching monthly requisitions:', err);
+      setMonthlyRequests([]);
+    }
+  };
+
 
   const generateCategoryColors = (count) => {
     // Base color palette (can be extended)
@@ -251,15 +264,21 @@ const AdminDashboard = () => {
               <div className="bg-white p-4 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-4">Monthly Requisition Requests</h3>
                 <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyRequests} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="requests" fill="#1B2850" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {monthlyRequests.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyRequests} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="requests" fill="#1B2850" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-gray-500">No requisition data available</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
