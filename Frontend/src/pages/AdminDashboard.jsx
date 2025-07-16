@@ -24,7 +24,7 @@ const AdminDashboard = () => {
   });
   const [lowStockItems, setLowStockItems] = useState([]); // Initialize as an empty array
   const [categories, setCategories] = useState([]); // Add categories state
-
+  const [inventoryByCategory, setInventoryByCategory] = useState([]);
   const navigate = useNavigate();
 
   // Fetch active users count from the backend
@@ -120,6 +120,35 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchInventoryByCategory = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/inventory/category-stats', {
+        withCredentials: true,
+      });
+
+      console.log('API Response:', response.data); // Debug log
+
+      if (response.data.success) {
+        // Ensure data is in correct format for PieChart
+        const formattedData = response.data.data.map(item => ({
+          name: item.name,
+          value: item.value
+        }));
+
+        setInventoryByCategory(formattedData);
+      } else {
+        console.error('Server returned unsuccessful response:', response.data);
+        setInventoryByCategory([]);
+      }
+    } catch (err) {
+      console.error('API Error:', {
+        error: err,
+        response: err.response?.data
+      });
+      setInventoryByCategory([]);
+    }
+  };
+
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -127,18 +156,14 @@ const AdminDashboard = () => {
       await fetchTotalItemsCount();
       await fetchLowStockItems();
       await fetchCategories(); // Fetch categories
-      await fetchPendingRequestsCount(); 
+      await fetchPendingRequestsCount();
+      await fetchInventoryByCategory();
     };
 
     fetchData();
   }, []);
 
-  const inventoryByCategory = [
-    { name: 'Electronics', value: 400 },
-    { name: 'Furniture', value: 300 },
-    { name: 'Stationery', value: 200 },
-    { name: 'Books', value: 350 }
-  ];
+
 
   const monthlyRequests = [
     { month: 'Jan', requests: 65 },
@@ -149,7 +174,36 @@ const AdminDashboard = () => {
     { month: 'Jun', requests: 90 }
   ];
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const generateCategoryColors = (count) => {
+    // Base color palette (can be extended)
+    const baseColors = [
+      '#0088FE', '#00C49F', '#FFBB28', '#FF8042',
+      '#A28DFF', '#FF6B6B', '#4ECDC4', '#FF9F43',
+      '#7ED321', '#BD10E0', '#4A90E2', '#50E3C2',
+      '#B8E986', '#F5A623', '#D0021B', '#8B572A',
+      '#9013FE', '#417505', '#FF85CB', '#7A87A1',
+      '#D4A59A', '#FF6E4A', '#1CE6FF', '#5E35B1'
+    ];
+
+    // If we have more categories than base colors, generate additional colors
+    if (count <= baseColors.length) {
+      return baseColors.slice(0, count);
+    }
+
+    // Generate additional colors dynamically using HSL color model
+    const additionalColors = [];
+    const hueStep = 360 / (count - baseColors.length);
+
+    for (let i = 0; i < count - baseColors.length; i++) {
+      const hue = Math.floor(i * hueStep);
+      // Vary saturation and lightness for better distinction
+      const saturation = 65 + Math.floor(Math.random() * 20);
+      const lightness = 50 + Math.floor(Math.random() * 15);
+      additionalColors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    }
+
+    return [...baseColors, ...additionalColors];
+  };
 
   const handleLogout = async () => {
     try {
@@ -212,25 +266,34 @@ const AdminDashboard = () => {
               <div className="bg-white p-4 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-4">Inventory by Category</h3>
                 <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={inventoryByCategory}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {inventoryByCategory.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  {inventoryByCategory.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={inventoryByCategory}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {inventoryByCategory.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={generateCategoryColors(inventoryByCategory.length)[index % generateCategoryColors(inventoryByCategory.length).length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-gray-500">No category data available</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -360,9 +423,8 @@ const StatCard = ({ title, value, icon, color }) => (
 const SidebarItem = ({ icon, text, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center space-x-2 w-full p-3 rounded-lg transition-colors ${
-      active ? 'bg-blue-700 text-white' : 'text-gray-300 hover:bg-blue-800'
-    }`}
+    className={`flex items-center space-x-2 w-full p-3 rounded-lg transition-colors ${active ? 'bg-blue-700 text-white' : 'text-gray-300 hover:bg-blue-800'
+      }`}
   >
     {icon}
     <span>{text}</span>

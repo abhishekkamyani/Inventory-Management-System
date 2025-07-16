@@ -5,7 +5,7 @@ import {
   addInventory,
   updateInventory,
   deleteInventory,
-  getLowStockItems
+  getLowStockItems,getCategoryStats
 } from "../controllers/inventoryController.js";
 
 import { editCategory, deleteCategory } from "../controllers/categoryController.js";
@@ -53,7 +53,7 @@ router.delete("/items/:id", deleteItem);
 // Inventory stats route
 router.get('/stats', getInventoryStats);
 
-
+router.get('/category-stats', getCategoryStats);
 
 // Fetch all inventory items
 router.get("/", verifyAuth, getInventory);
