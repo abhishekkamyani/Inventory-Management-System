@@ -110,3 +110,83 @@ export const updateStockLevels = async (req, res, next) => {
     next(error); // Pass the error to the global error handler
   }
 };
+
+
+
+export const receiveStock = async (req, res, next) => {
+  try {
+    const { itemId, quantity, expectedName, expectedCategory } = req.body;
+    
+    // Validate input
+    if (!itemId || !quantity || quantity < 1) {
+      return res.status(400).json({ message: 'Invalid input data' });
+    }
+
+    const item = await Item.findById(itemId);
+    
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    
+    // Verify item details match expected values
+    if (item.name !== expectedName || item.category !== expectedCategory) {
+      return res.status(400).json({ message: 'Item details do not match' });
+    }
+    
+    // Update stock by adding the received quantity
+    item.quantity += quantity;
+    await item.save();
+    
+    res.json({ 
+      message: 'Stock received successfully',
+      item,
+      action: 'received',
+      quantityReceived: quantity
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const takeStock = async (req, res, next) => {
+  try {
+    const { itemId, quantity, expectedName, expectedCategory } = req.body;
+    
+    // Validate input
+    if (!itemId || !quantity || quantity < 1) {
+      return res.status(400).json({ message: 'Invalid input data' });
+    }
+
+    const item = await Item.findById(itemId);
+    
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    
+    // Verify item details match expected values
+    if (item.name !== expectedName || item.category !== expectedCategory) {
+      return res.status(400).json({ message: 'Item details do not match' });
+    }
+    
+    // Check if enough stock is available
+    if (item.quantity < quantity) {
+      return res.status(400).json({ 
+        message: `Insufficient stock. Only ${item.quantity} available`,
+        availableQuantity: item.quantity
+      });
+    }
+    
+    // Update stock by subtracting the taken quantity
+    item.quantity -= quantity;
+    await item.save();
+    
+    res.json({ 
+      message: 'Stock taken successfully',
+      item,
+      action: 'taken',
+      quantityTaken: quantity
+    });
+  } catch (error) {
+    next(error);
+  }
+};

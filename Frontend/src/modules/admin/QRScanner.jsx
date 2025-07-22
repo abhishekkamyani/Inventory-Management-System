@@ -5,12 +5,13 @@ import axios from 'axios';
 const QRScanner = () => {
   const [result, setResult] = useState('');
   const [item, setItem] = useState(null);
-  const [quantityReceived, setQuantityReceived] = useState(1);
+  const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [cameraAllowed, setCameraAllowed] = useState(false);
+  const [actionType, setActionType] = useState('receive'); // 'receive' or 'take'
   const qrRef = useRef(null);
 
   // Validate ObjectId format
@@ -66,28 +67,40 @@ const QRScanner = () => {
   };
 
   const handleUpdateStock = async () => {
-    if (quantityReceived < 1) {
-      alert('Quantity received must be at least 1');
+    if (quantity < 1) {
+      alert('Quantity must be at least 1');
       return;
     }
+    
+    if (actionType === 'take' && quantity > item.quantity) {
+      alert(`Cannot take more than available stock (${item.quantity})`);
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3000/api/qr/scan', {
+      const endpoint = actionType === 'receive' 
+        ? 'http://localhost:3000/api/qr/receive' 
+        : 'http://localhost:3000/api/qr/take';
+
+      const response = await axios.post(endpoint, {
         itemId: result,
-        quantityReceived,
+        quantity,
         expectedName: item.name,
         expectedCategory: item.category,
       });
+      
       setShowSuccess(true);
       // Reset state after successful update
       setResult('');
       setItem(null);
-      setQuantityReceived(1);
+      setQuantity(1);
       setIsScanning(false);
       setCameraAllowed(false);
     } catch (err) {
-      alert('Failed to update stock levels');
-      console.error('Error updating stock levels:', err.response ? err.response.data : err.message);
+      alert(`Failed to ${actionType} stock`);
+      console.error(`Error ${actionType === 'receive' ? 'receiving' : 'taking'} stock:`, 
+        err.response ? err.response.data : err.message);
     } finally {
       setLoading(false);
     }
@@ -151,18 +164,49 @@ const QRScanner = () => {
             <h2 className="text-xl font-semibold mb-4">Item Details</h2>
             <p className="text-gray-700"><span className="font-medium">Name:</span> {item.name}</p>
             <p className="text-gray-700"><span className="font-medium">Category:</span> {item.category}</p>
-            <p className="text-gray-700"><span className="font-medium">Quantity:</span> {item.quantity}</p>
+            <p className="text-gray-700"><span className="font-medium">Current Quantity:</span> {item.quantity}</p>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Action Type
+              </label>
+              <div className="flex space-x-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    className="form-radio"
+                    name="actionType"
+                    value="receive"
+                    checked={actionType === 'receive'}
+                    onChange={() => setActionType('receive')}
+                  />
+                  <span className="ml-2">Receive Stock</span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    className="form-radio"
+                    name="actionType"
+                    value="take"
+                    checked={actionType === 'take'}
+                    onChange={() => setActionType('take')}
+                  />
+                  <span className="ml-2">Take Stock</span>
+                </label>
+              </div>
+            </div>
 
             <div className="mt-4">
               <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
-                Quantity Received
+                {actionType === 'receive' ? 'Quantity Received' : 'Quantity Taken'}
               </label>
               <input
                 type="number"
                 id="quantity"
-                value={quantityReceived}
-                onChange={(e) => setQuantityReceived(Number(e.target.value))}
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
                 min="1"
+                max={actionType === 'take' ? item.quantity : undefined}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -170,9 +214,11 @@ const QRScanner = () => {
             <button
               onClick={handleUpdateStock}
               disabled={loading}
-              className="w-full mt-4 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-200 disabled:opacity-50"
+              className={`w-full mt-4 ${
+                actionType === 'receive' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'
+              } text-white py-2 px-4 rounded-md transition duration-200 disabled:opacity-50`}
             >
-              Update Stock
+              {actionType === 'receive' ? 'Add to Stock' : 'Remove from Stock'}
             </button>
           </div>
         )}
@@ -189,7 +235,10 @@ const QRScanner = () => {
               Stock updated successfully!
             </div>
             <button
-              onClick={() => setShowSuccess(false)}
+              onClick={() => {
+                setShowSuccess(false);
+                setActionType('receive'); // Reset to default action
+              }}
               className="w-full mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200"
             >
               Start Scanning Again

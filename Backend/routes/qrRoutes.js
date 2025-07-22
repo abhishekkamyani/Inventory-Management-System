@@ -1,7 +1,8 @@
 import express from 'express';
 import {
   getItemById,
-  updateStockLevels,
+  receiveStock,
+  takeStock
 } from '../controllers/itemController.js'; // Import your existing controllers
 
 const router = express.Router();
@@ -9,7 +10,13 @@ const router = express.Router();
 // Route to get item details by ID (for QR scanner)
 router.get('/:id', getItemById);
 
-// Route to update stock levels after scanning (for QR scanner)
-router.post('/scan', updateStockLevels);
+
+
+
+// Route to receive stock (add to inventory)
+router.post('/receive', receiveStock);
+
+// Route to take stock (remove from inventory)
+router.post('/take', takeStock);
 
 export default router;
