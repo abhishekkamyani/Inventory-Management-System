@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, ClipboardList, Bell, Menu, X, FileText, UserCircle } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Menu, X, FileText, UserCircle } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -173,7 +173,7 @@ const DirectorDashboard = () => {
       case 'requisition-detail':
         return (
           <RequisitionDetail 
-           isDirectorView={true}  // Add this prop
+            isDirectorView={true}
             renderStatusTimeline={(requisition) => (
               <div className="mt-6">
                 <h3 className="text-lg font-semibold mb-4">Status Timeline</h3>
@@ -269,10 +269,7 @@ const DirectorDashboard = () => {
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 ml-12 lg:ml-0">
               Director Dashboard
             </h1>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <Bell size={20} />
-              </button>
+            <div className="flex items-center">
               <div className="relative">
                 <button
                   className="p-2 rounded-full hover:bg-gray-100"
@@ -282,15 +279,6 @@ const DirectorDashboard = () => {
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50">
-                    <button
-                      className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-                      onClick={() => {
-                        setSelectedMenu('settings');
-                        setIsDropdownOpen(false);
-                      }}
-                    >
-                      Account Settings
-                    </button>
                     <button
                       className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100"
                       onClick={handleLogout}

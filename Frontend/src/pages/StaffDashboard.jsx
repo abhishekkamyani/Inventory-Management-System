@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, BoxesIcon, ClipboardList, Bell, Menu, X, FileText, Package, UserCircle } from 'lucide-react';
+import { LayoutDashboard, BoxesIcon, ClipboardList, Menu, X, FileText, Package, UserCircle } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -42,7 +42,7 @@ const StaffDashboard = () => {
       const response = await axios.get('http://localhost:3000/api/inventory/low-stock-items', {
         withCredentials: true,
       });
-       console.log('API Response:', response.data);
+      console.log('API Response:', response.data);
       if (response.data.success) {
         setLowStockItems(response.data.data);
         setStats((prevStats) => ({
@@ -239,10 +239,7 @@ const StaffDashboard = () => {
         <header className="bg-white shadow-sm relative z-10">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 ml-12 lg:ml-0">Staff Dashboard</h1>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <Bell size={20} />
-              </button>
+            <div className="flex items-center">
               <div className="relative">
                 <button 
                   className="p-2 rounded-full hover:bg-gray-100 dropdown-button" 
@@ -252,12 +249,6 @@ const StaffDashboard = () => {
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50">
-                    <button 
-                      className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      Account Settings
-                    </button>
                     <button 
                       className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" 
                       onClick={handleLogout}

@@ -1,85 +1,108 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import logo from '../assets/sukkur-iba-logo.jpg'; // Import the logo
+import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
+import logo from '../assets/sukkur-iba-logo.jpg';
 
 const SignUp = () => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('');
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: ''
+  });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [roles, setRoles] = useState([]);
-
-  useEffect(() => {
-
-    const fetchRoles = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/auth/get_roles');
-
-        console.log(response);
-
-
-        if (response.status === 200) {
-          setRoles(response.data.roles);
-          setRole(response.data.roles[0]);
-        } else {
-          setError('An unexpected error occurred. Please try again.');
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    }
-
-    fetchRoles();
-
-    return () => { };
-  }, [])
-
-  console.log("Roles:", roles);
-
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        setRolesLoading(true);
+        const response = await axios.get('http://localhost:3000/auth/get_roles');
+        
+        if (response.status === 200) {
+          setRoles(response.data.roles);
+          setFormData(prev => ({
+            ...prev,
+            role: response.data.roles[0] || ''
+          }));
+        } else {
+          setError('Failed to load roles. Please refresh the page.');
+        }
+      } catch (err) {
+        setError('Error loading roles. Please try again later.');
+        console.error('Error fetching roles:', err);
+      } finally {
+        setRolesLoading(false);
+      }
+    };
+
+    fetchRoles();
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
 
-    if (password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    const data = {
-      fullName,
-      email,
-      password,
-      confirmPassword,
-      role
-    }
+    setIsSubmitting(true);
 
     try {
-      const response = await axios.post('http://localhost:3000/auth/signup', data);
+      const response = await axios.post('http://localhost:3000/auth/signup', formData);
 
       if (response.status === 201) {
         setSuccess('Sign Up successful! Please check your email to verify your account.');
-        setError('');
-        // Don't redirect immediately - wait for verification
+        // Clear form on success
+        setFormData({
+          fullName: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          role: roles[0] || ''
+        });
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
+      if (err.response) {
+        if (err.response.data && err.response.data.message) {
+          setError(err.response.data.message);
+        } else {
+          setError('Registration failed. Please try again.');
+        }
+      } else if (err.request) {
+        setError('Network error. Please check your connection.');
       } else {
-        setError('Error connecting to the server. Please try again.');
+        setError('An error occurred. Please try again.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -97,8 +120,16 @@ const SignUp = () => {
         </h2>
 
         {/* Error and Success Messages */}
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        {success && <p className="text-green-500 text-center mb-4">{success}</p>}
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border-l-4 border-red-500 text-red-700">
+            <p>{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-100 border-l-4 border-green-500 text-green-700">
+            <p>{success}</p>
+          </div>
+        )}
 
         {/* Sign Up Form */}
         <form onSubmit={handleSignUpSubmit}>
@@ -106,22 +137,26 @@ const SignUp = () => {
             <label className="block text-gray-700 text-sm font-medium mb-2">Full Name</label>
             <input
               type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
               placeholder="Enter your full name"
               required
+              disabled={isSubmitting}
             />
           </div>
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-medium mb-2">Email</label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
               placeholder="Enter your email"
               required
+              disabled={isSubmitting}
             />
           </div>
           <div className="mb-6">
@@ -129,16 +164,19 @@ const SignUp = () => {
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
                 placeholder="Enter your password"
                 required
+                disabled={isSubmitting}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-4 flex items-center text-gray-600"
+                disabled={isSubmitting}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -149,16 +187,19 @@ const SignUp = () => {
             <div className="relative">
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
                 placeholder="Confirm your password"
                 required
+                disabled={isSubmitting}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 right-4 flex items-center text-gray-600"
+                disabled={isSubmitting}
               >
                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -166,22 +207,42 @@ const SignUp = () => {
           </div>
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-medium mb-2">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
-            >
-              {roles?.map((role) => (
-                <option value={role} key={role}>{role}</option>
-              ))}
-            </select>
+            {rolesLoading ? (
+              <div className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-500">
+                Loading roles...
+              </div>
+            ) : (
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+                disabled={isSubmitting || rolesLoading}
+              >
+                {roles.map((role) => (
+                  <option value={role} key={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="flex justify-center items-center">
             <button
               type="submit"
-              className="px-8 py-3 text-white bg-blue-900 rounded-md hover:bg-blue-800"
+              className={`px-8 py-3 text-white bg-blue-900 rounded-md hover:bg-blue-800 flex items-center justify-center min-w-32 ${
+                isSubmitting ? 'opacity-75' : ''
+              }`}
+              disabled={isSubmitting || rolesLoading}
             >
-              Sign Up
+              {isSubmitting ? (
+                <>
+                  <FaSpinner className="animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                'Sign Up'
+              )}
             </button>
           </div>
         </form>
@@ -190,7 +251,10 @@ const SignUp = () => {
         <div className="text-center mt-6">
           <p className="text-gray-600">
             Already have an account?{' '}
-            <a href="/signin" className="text-blue-900 font-medium hover:underline">
+            <a
+              href="/signin"
+              className="text-blue-900 font-medium hover:underline"
+            >
               Login here
             </a>
           </p>

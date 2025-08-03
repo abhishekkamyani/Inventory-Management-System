@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, BoxesIcon, ClipboardList, Bell, Menu, X, FileText, Package, Settings as SettingsIcon, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Users, BoxesIcon, ClipboardList, Menu, X, FileText, Package, Settings as SettingsIcon, UserCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -267,7 +267,6 @@ const AdminDashboard = () => {
             </div>
 
             {/* Low Stock Items Table */}
-            {/* Low Stock Items Table */}
             <div className="bg-white p-3 sm:p-4 rounded-lg shadow overflow-hidden">
               <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Recent Low Stock Items</h3>
 
@@ -319,7 +318,6 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
-
           </div>
         );
       case 'users':
@@ -406,13 +404,7 @@ const AdminDashboard = () => {
             <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800 ml-10 sm:ml-12 lg:ml-0">
               Admin Dashboard
             </h1>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <button
-                className="p-1 sm:p-2 rounded-full hover:bg-gray-100"
-                aria-label="Notifications"
-              >
-                <Bell size={windowWidth < 640 ? 18 : 20} />
-              </button>
+            <div className="flex items-center">
               <div className="relative dropdown-container">
                 <button
                   className="p-1 sm:p-2 rounded-full hover:bg-gray-100"
@@ -423,9 +415,6 @@ const AdminDashboard = () => {
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50">
-                    <button className="block w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-gray-100">
-                      Account Settings
-                    </button>
                     <button
                       className="block w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm text-red-600 hover:bg-gray-100"
                       onClick={handleLogout}

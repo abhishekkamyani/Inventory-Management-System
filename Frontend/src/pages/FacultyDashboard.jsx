@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, ClipboardList, Bell, Menu, X, FileText, Package, UserCircle } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Menu, X, FileText, UserCircle } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,30 +30,30 @@ const FacultyDashboard = () => {
 
   const navigate = useNavigate();
   const API_BASE_URL = "http://localhost:3000";
-  // Update these functions in FacultyDashboard.jsx
-const fetchDashboardStats = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/api/requisitions/stats`, {
-      withCredentials: true
-    });
-    setStats(response.data.data); // Note the .data.data structure
-  } catch (err) {
-    console.error('Error:', err);
-    setError('Failed to load stats');
-  }
-};
+  
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/requisitions/stats`, {
+        withCredentials: true
+      });
+      setStats(response.data.data);
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Failed to load stats');
+    }
+  };
 
-const fetchRecentRequisitions = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/api/requisitions/recent`, {
-      withCredentials: true
-    });
-    setRecentRequests(response.data.data); // Note the .data.data structure
-  } catch (err) {
-    console.error('Error:', err);
-    setError('Failed to load recent requisitions');
-  }
-};
+  const fetchRecentRequisitions = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/requisitions/recent`, {
+        withCredentials: true
+      });
+      setRecentRequests(response.data.data);
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Failed to load recent requisitions');
+    }
+  };
 
   useEffect(() => {
     if (selectedMenu === 'dashboard') {
@@ -228,15 +228,9 @@ const fetchRecentRequisitions = async () => {
         <header className="bg-white shadow-sm">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 ml-12 lg:ml-0">
-              {selectedMenu === 'dashboard' && 'Faculty Dashboard'}
-              {selectedMenu === 'new-requisition' && 'New Requisition'}
-              {selectedMenu === 'requisition-history' && 'Requisition History'}
-              {selectedMenu === 'settings' && 'Settings'}
+              Faculty Dashboard
             </h1>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-full hover:bg-gray-100" aria-label="Notifications">
-                <Bell size={20} />
-              </button>
+            <div className="flex items-center">
               <div className="relative">
                 <button 
                   className="p-2 rounded-full hover:bg-gray-100" 
@@ -247,15 +241,6 @@ const fetchRecentRequisitions = async () => {
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50">
-                    <button 
-                      className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-                      onClick={() => {
-                        setSelectedMenu('settings');
-                        setIsDropdownOpen(false);
-                      }}
-                    >
-                      Account Settings
-                    </button>
                     <button 
                       className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100" 
                       onClick={handleLogout}
