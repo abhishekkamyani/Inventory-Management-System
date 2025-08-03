@@ -509,5 +509,10 @@ export const verifyResetToken = async (req, res) => {
 
 
 
-
+// In authController.js - Add these exports at the bottom of the file
+export { 
+  transporter, 
+  sendVerificationEmail,
+ 
+};
 

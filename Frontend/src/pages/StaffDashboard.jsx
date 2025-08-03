@@ -42,7 +42,7 @@ const StaffDashboard = () => {
       const response = await axios.get('http://localhost:3000/api/inventory/low-stock-items', {
         withCredentials: true,
       });
-
+       console.log('API Response:', response.data);
       if (response.data.success) {
         setLowStockItems(response.data.data);
         setStats((prevStats) => ({

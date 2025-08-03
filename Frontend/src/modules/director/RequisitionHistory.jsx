@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   FileText, ChevronDown, ChevronUp, Download, Printer, 
   RefreshCw, XCircle, CheckCircle, Clock, AlertCircle, 
-  Search, Filter, Trash2, FileEdit
+  Search, Trash2, FileEdit
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -155,64 +155,57 @@ const RequisitionHistory = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-semibold mb-4 flex items-center">
-        <FileText className="mr-2" /> Requisition History
-      </h3>
-
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search requisitions..."
-            className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-            value={filters.searchQuery}
-            onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
-          />
+    <div className="space-y-6">
+      {/* Header and Filters */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h2 className="text-2xl font-bold">Requisition History</h2>
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search requisitions..."
+              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={filters.searchQuery}
+              onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
+            />
+          </div>
+          
+          {/* Status Filter */}
+          <select
+            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={filters.status}
+            onChange={(e) => setFilters({...filters, status: e.target.value})}
+          >
+            <option value="all">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Fulfilled">Fulfilled</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          
+          {/* Date Filter */}
+          <select
+            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={filters.dateRange}
+            onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+          >
+            <option value="all">All Dates</option>
+            <option value="week">Last 7 Days</option>
+            <option value="month">Last 30 Days</option>
+            <option value="year">This Year</option>
+          </select>
         </div>
-        
-        {/* Status Filter */}
-        <select
-          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={filters.status}
-          onChange={(e) => setFilters({...filters, status: e.target.value})}
-        >
-          <option value="all">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Fulfilled">Fulfilled</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-        
-        {/* Date Filter */}
-        <select
-          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={filters.dateRange}
-          onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
-        >
-          <option value="all">All Dates</option>
-          <option value="week">Last 7 Days</option>
-          <option value="month">Last 30 Days</option>
-          <option value="year">This Year</option>
-        </select>
-        
-        <button
-          onClick={fetchRequisitions}
-          className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center justify-center"
-          title="Refresh"
-        >
-          <RefreshCw size={18} />
-        </button>
       </div>
 
       {/* Loading State */}
       {loading && (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="flex flex-col items-center justify-center p-8 space-y-3">
+          <RefreshCw className="animate-spin text-blue-500" size={24} />
+          <p className="text-gray-600">Loading requisitions...</p>
         </div>
       )}
 
@@ -257,256 +250,263 @@ const RequisitionHistory = () => {
 
       {/* Requisitions List */}
       {!loading && !error && requisitions.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Requisition ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {requisitions.map((requisition) => (
-                <React.Fragment key={requisition._id}>
-                  <tr 
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setExpandedId(expandedId === requisition._id ? null : requisition._id)}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        #{requisition._id.slice(-6).toUpperCase()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {formatDate(requisition.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {requisition.items.length} {requisition.items.length === 1 ? 'item' : 'items'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {getStatusIcon(requisition.status)}
-                        <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                          requisition.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                          requisition.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                          requisition.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                          requisition.status === 'Fulfilled' ? 'bg-blue-100 text-blue-800' :
-                          requisition.status === 'Cancelled' ? 'bg-gray-100 text-gray-800' :
-                          'bg-purple-100 text-purple-800'
-                        }`}>
-                          {requisition.status}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex space-x-2 justify-end">
-                        {requisition.status === 'Pending' && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCancel(requisition._id);
-                            }}
-                            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
-                            title="Cancel"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                        {requisition.status === 'Rejected' && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleResubmit(requisition);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
-                            title="Resubmit"
-                          >
-                            <FileEdit size={16} />
-                          </button>
-                        )}
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownload(requisition);
-                          }}
-                          className="text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-50"
-                          title="Download"
-                        >
-                          <Download size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExpandedId(expandedId === requisition._id ? null : requisition._id);
-                          }}
-                          className="text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-50"
-                          title={expandedId === requisition._id ? "Collapse" : "Expand"}
-                        >
-                          {expandedId === requisition._id ? (
-                            <ChevronUp size={16} />
-                          ) : (
-                            <ChevronDown size={16} />
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Requisition ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {requisitions.map((requisition) => (
+                  <React.Fragment key={requisition._id}>
+                    <tr 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setExpandedId(expandedId === requisition._id ? null : requisition._id)}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          #{requisition._id.slice(-6).toUpperCase()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {formatDate(requisition.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {requisition.items.length} {requisition.items.length === 1 ? 'item' : 'items'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {getStatusIcon(requisition.status)}
+                          <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                            requisition.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                            requisition.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                            requisition.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                            requisition.status === 'Fulfilled' ? 'bg-blue-100 text-blue-800' :
+                            requisition.status === 'Cancelled' ? 'bg-gray-100 text-gray-800' :
+                            'bg-purple-100 text-purple-800'
+                          }`}>
+                            {requisition.status}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex space-x-2 justify-end">
+                          {requisition.status === 'Pending' && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancel(requisition._id);
+                              }}
+                              className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                              title="Cancel"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  
-                  {/* Expanded Details */}
-                  {expandedId === requisition._id && (
-                    <tr className="bg-gray-50">
-                      <td colSpan="5" className="px-6 py-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          {/* Items List */}
-                          <div>
-                            <h3 className="font-medium mb-2">Items Requested</h3>
-                            <ul className="space-y-3">
-                              {requisition.items.map((item, index) => (
-                                <li key={index} className="flex justify-between items-start">
-                                  <div>
-                                    <span className="font-medium">{item.name}</span>
-                                    {item.purpose && (
-                                      <p className="text-sm text-gray-600 mt-1">{item.purpose}</p>
-                                    )}
-                                  </div>
-                                  <span className="text-gray-600 bg-gray-100 px-2 py-1 rounded text-sm">
-                                    Qty: {item.quantity}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                          
-                          {/* Status Information */}
-                          <div>
-                            <h3 className="font-medium mb-2">Status Timeline</h3>
-                            <div className="space-y-3">
-                              <div className="flex items-start">
-                                <div className="flex-shrink-0 mt-1">
-                                  <CheckCircle className="text-green-500" size={16} />
-                                </div>
-                                <div className="ml-3">
-                                  <p className="text-sm font-medium">Submitted</p>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {formatDate(requisition.createdAt)}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {requisition.status === 'Approved' && requisition.updatedAt && (
+                          {requisition.status === 'Rejected' && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleResubmit(requisition);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
+                              title="Resubmit"
+                            >
+                              <FileEdit size={16} />
+                            </button>
+                          )}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownload(requisition);
+                            }}
+                            className="text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-50"
+                            title="Download"
+                          >
+                            <Download size={16} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedId(expandedId === requisition._id ? null : requisition._id);
+                            }}
+                            className="text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-50"
+                            title={expandedId === requisition._id ? "Collapse" : "Expand"}
+                          >
+                            {expandedId === requisition._id ? (
+                              <ChevronUp size={16} />
+                            ) : (
+                              <ChevronDown size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    
+                    {/* Expanded Details */}
+                    {expandedId === requisition._id && (
+                      <tr className="bg-gray-50">
+                        <td colSpan="5" className="px-6 py-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Items List */}
+                            <div>
+                              <h3 className="font-medium mb-2">Items Requested</h3>
+                              <ul className="space-y-3">
+                                {requisition.items.map((item, index) => (
+                                  <li key={index} className="flex justify-between items-start">
+                                    <div>
+                                      <span className="font-medium">{item.name}</span>
+                                      {item.purpose && (
+                                        <p className="text-sm text-gray-600 mt-1">{item.purpose}</p>
+                                      )}
+                                    </div>
+                                    <span className="text-gray-600 bg-gray-100 px-2 py-1 rounded text-sm">
+                                      Qty: {item.quantity}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            
+                            {/* Status Information */}
+                            <div>
+                              <h3 className="font-medium mb-2">Status Timeline</h3>
+                              <div className="space-y-3">
                                 <div className="flex items-start">
                                   <div className="flex-shrink-0 mt-1">
                                     <CheckCircle className="text-green-500" size={16} />
                                   </div>
                                   <div className="ml-3">
-                                    <p className="text-sm font-medium">Approved</p>
+                                    <p className="text-sm font-medium">Submitted</p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      {formatDate(requisition.updatedAt)}
+                                      {formatDate(requisition.createdAt)}
                                     </p>
-                                    {requisition.approvedBy && (
+                                    {requisition.submittedBy && (
                                       <p className="text-xs text-gray-500 mt-1">
-                                        By: {requisition.approvedBy.name || 'Administrator'}
+                                        By: {requisition.submittedBy.name || 'Director'}
                                       </p>
                                     )}
                                   </div>
                                 </div>
-                              )}
 
-                              {requisition.status === 'Rejected' && requisition.updatedAt && (
-                                <div className="flex items-start">
-                                  <div className="flex-shrink-0 mt-1">
-                                    <XCircle className="text-red-500" size={16} />
-                                  </div>
-                                  <div className="ml-3">
-                                    <p className="text-sm font-medium">Rejected</p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {formatDate(requisition.updatedAt)}
-                                    </p>
-                                    {requisition.rejectionReason && (
-                                      <div className="mt-1 p-2 bg-red-50 rounded">
-                                        <p className="text-xs text-red-700">
-                                          <span className="font-medium">Reason:</span> {requisition.rejectionReason}
+                                {requisition.status === 'Approved' && requisition.updatedAt && (
+                                  <div className="flex items-start">
+                                    <div className="flex-shrink-0 mt-1">
+                                      <CheckCircle className="text-green-500" size={16} />
+                                    </div>
+                                    <div className="ml-3">
+                                      <p className="text-sm font-medium">Approved</p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {formatDate(requisition.updatedAt)}
+                                      </p>
+                                      {requisition.approvedBy && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          By: {requisition.approvedBy.name || 'Administrator'}
                                         </p>
-                                      </div>
-                                    )}
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
-                              {requisition.status === 'Fulfilled' && requisition.updatedAt && (
-                                <div className="flex items-start">
-                                  <div className="flex-shrink-0 mt-1">
-                                    <CheckCircle className="text-blue-500" size={16} />
+                                {requisition.status === 'Rejected' && requisition.updatedAt && (
+                                  <div className="flex items-start">
+                                    <div className="flex-shrink-0 mt-1">
+                                      <XCircle className="text-red-500" size={16} />
+                                    </div>
+                                    <div className="ml-3">
+                                      <p className="text-sm font-medium">Rejected</p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {formatDate(requisition.updatedAt)}
+                                      </p>
+                                      {requisition.rejectionReason && (
+                                        <div className="mt-1 p-2 bg-red-50 rounded">
+                                          <p className="text-xs text-red-700">
+                                            <span className="font-medium">Reason:</span> {requisition.rejectionReason}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="ml-3">
-                                    <p className="text-sm font-medium">Fulfilled</p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {formatDate(requisition.updatedAt)}
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
+                                )}
 
-                              {requisition.status === 'Cancelled' && requisition.updatedAt && (
-                                <div className="flex items-start">
-                                  <div className="flex-shrink-0 mt-1">
-                                    <AlertCircle className="text-gray-500" size={16} />
+                                {requisition.status === 'Fulfilled' && requisition.updatedAt && (
+                                  <div className="flex items-start">
+                                    <div className="flex-shrink-0 mt-1">
+                                      <CheckCircle className="text-blue-500" size={16} />
+                                    </div>
+                                    <div className="ml-3">
+                                      <p className="text-sm font-medium">Fulfilled</p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {formatDate(requisition.updatedAt)}
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div className="ml-3">
-                                    <p className="text-sm font-medium">Cancelled</p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {formatDate(requisition.updatedAt)}
-                                    </p>
+                                )}
+
+                                {requisition.status === 'Cancelled' && requisition.updatedAt && (
+                                  <div className="flex items-start">
+                                    <div className="flex-shrink-0 mt-1">
+                                      <AlertCircle className="text-gray-500" size={16} />
+                                    </div>
+                                    <div className="ml-3">
+                                      <p className="text-sm font-medium">Cancelled</p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {formatDate(requisition.updatedAt)}
+                                      </p>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          
-                          {/* Actions */}
-                          <div>
-                            <h3 className="font-medium mb-2">Actions</h3>
-                            <div className="flex flex-col space-y-2">
-                              <button 
-                                onClick={() => handleDownload(requisition)}
-                                className="flex items-center text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50"
-                              >
-                                <Download className="mr-2" size={16} />
-                                Download as PDF
-                              </button>
-                              <button 
-                                onClick={() => window.print()}
-                                className="flex items-center text-gray-600 hover:text-gray-800 p-2 rounded hover:bg-gray-50"
-                              >
-                                <Printer className="mr-2" size={16} />
-                                Print Requisition
-                              </button>
-                              {requisition.status === 'Rejected' && (
+                            
+                            {/* Actions */}
+                            <div>
+                              <h3 className="font-medium mb-2">Actions</h3>
+                              <div className="flex flex-col space-y-2">
                                 <button 
-                                  onClick={() => handleResubmit(requisition)}
-                                  className="flex items-center text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50"
+                                  onClick={() => handleDownload(requisition)}
+                                  className="flex items-center text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50"
                                 >
-                                  <FileEdit className="mr-2" size={16} />
-                                  Resubmit Request
+                                  <Download className="mr-2" size={16} />
+                                  Download as PDF
                                 </button>
-                              )}
+                                <button 
+                                  onClick={() => window.print()}
+                                  className="flex items-center text-gray-600 hover:text-gray-800 p-2 rounded hover:bg-gray-50"
+                                >
+                                  <Printer className="mr-2" size={16} />
+                                  Print Requisition
+                                </button>
+                                {requisition.status === 'Rejected' && (
+                                  <button 
+                                    onClick={() => handleResubmit(requisition)}
+                                    className="flex items-center text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50"
+                                  >
+                                    <FileEdit className="mr-2" size={16} />
+                                    Resubmit Request
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
