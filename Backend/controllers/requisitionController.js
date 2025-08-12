@@ -714,3 +714,27 @@ export const getMonthlyRequisitions = async (req, res) => {
     });
   }
 };
+
+// Add this to your existing requisitionController.js
+export const getApprovedRequisitionsCount = async (req, res) => {
+  try {
+    // Case-sensitive exact match
+    const count = await Requisition.countDocuments({ status: "Approved" });
+    
+    // Or for case-insensitive match (more flexible):
+    // const count = await Requisition.countDocuments({ 
+    //   status: { $regex: /^approved$/i } 
+    // });
+    
+    res.json({ 
+      success: true, 
+      approvedRequisitionsCount: count 
+    });
+  } catch (error) {
+    console.error('Error counting approved requisitions:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};

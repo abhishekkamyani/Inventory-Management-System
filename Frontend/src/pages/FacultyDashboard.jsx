@@ -190,7 +190,7 @@ const FacultyDashboard = () => {
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="p-4">
-          <div className="text-xl font-bold mb-8">SIBA IMS</div>
+          <div className="text-xl font-bold mb-8">SIBAU IMS</div>
           <nav className="space-y-2">
             <SidebarItem 
               icon={<LayoutDashboard size={20} />} 

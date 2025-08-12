@@ -28,7 +28,7 @@ const Settings = () => {
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
-        setMessage('Failed to fetch user data. Please try again.');
+      //  setMessage('Failed to fetch user data. Please try again.');
       }
     };
   

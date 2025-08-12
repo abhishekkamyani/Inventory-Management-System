@@ -242,19 +242,42 @@ const AdminDashboard = () => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={windowWidth < 640 ? 70 : 80}
+                          label={({ name, percent }) =>
+                            windowWidth < 640 ? (
+                              // Mobile-specific label rendering
+                              <text
+                                style={{
+                                  fontSize: "10px", // Smaller font size for mobile
+                                  overflow: "visible", // Ensure text is not clipped
+                                }}
+                              >
+                                {`${name} ${(percent * 100).toFixed(0)}%`}
+                              </text>
+                            ) : (
+                              // Default desktop label rendering
+                              `${name} ${(percent * 100).toFixed(0)}%`
+                            )
+                          }
+                          outerRadius={windowWidth < 640 ? 70 : 80} // Adjust radius for mobile
                           fill="#8884d8"
                           dataKey="value"
                         >
                           {inventoryByCategory.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={generateCategoryColors(inventoryByCategory.length)[index % generateCategoryColors(inventoryByCategory.length).length]}
+                              fill={generateCategoryColors(inventoryByCategory.length)[
+                                index % generateCategoryColors(inventoryByCategory.length).length
+                              ]}
                             />
                           ))}
                         </Pie>
-                        <Tooltip />
+                        {/* Render Tooltip only for mobile */}
+                        {windowWidth < 640 && (
+                          <Tooltip
+                            formatter={(value, name) => [`${value}%`, name]}
+                            contentStyle={{ fontSize: "12px" }}
+                          />
+                        )}
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
@@ -355,7 +378,7 @@ const AdminDashboard = () => {
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="p-3 sm:p-4">
-          <div className="text-lg sm:text-xl font-bold mb-6 sm:mb-8">SIBA IMS</div>
+          <div className="text-lg sm:text-xl font-bold mb-6 sm:mb-8">SIBAU IMS</div>
           <nav className="space-y-1 sm:space-y-2">
             <SidebarItem
               icon={<LayoutDashboard size={windowWidth < 640 ? 18 : 20} />}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import moment from 'moment';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import {
@@ -14,13 +15,12 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
-  User
+  User,
+  Search
 } from 'lucide-react';
-import { DatePicker, Select, Button, Table, Card, Spin, message, Row, Col } from 'antd';
-import moment from 'moment';
-
-const { RangePicker } = DatePicker;
-const { Option } = Select;
+import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const dateKey = {
   "Approved": "approvedAt",
@@ -37,6 +37,16 @@ export default function Reports() {
   const [expandedRequisition, setExpandedRequisition] = useState(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [selectedRequisition, setSelectedRequisition] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Track window width
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchReportData = async () => {
     try {
@@ -51,10 +61,10 @@ export default function Reports() {
       );
 
       setRequisitions(data.data || []);
-      message.success(`Found ${data.data?.length || 0} requisitions`);
+      toast.success(`Found ${data.data?.length || 0} requisitions`);
     } catch (error) {
       console.error('Error fetching report data:', error);
-      message.error('Failed to fetch requisitions');
+      toast.error('Failed to fetch requisitions');
       setRequisitions([]);
     } finally {
       setLoading(false);
@@ -79,38 +89,43 @@ export default function Reports() {
     try {
       setLoading(true);
       await axios.put(`http://localhost:3000/api/requisitions/${requisitionId}/approve`, {}, { withCredentials: true });
-      message.success('Requisition approved successfully');
+      toast.success('Requisition approved successfully');
       fetchReportData();
     } catch (error) {
       console.error('Error approving requisition:', error);
-      message.error('Failed to approve requisition');
+      toast.error('Failed to approve requisition');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReject = async (reason) => {
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) {
+      toast.error('Please enter a rejection reason');
+      return;
+    }
+
     try {
       setLoading(true);
-      await axios.put(`http://localhost:3000/api/requisitions/${selectedRequisition}/reject`, 
-        { rejectionReason: reason }, 
+      await axios.put(
+        `http://localhost:3000/api/requisitions/${selectedRequisition}/reject`, 
+        { rejectionReason }, 
         { withCredentials: true }
       );
-      message.success('Requisition rejected successfully');
+      toast.success('Requisition rejected successfully');
       setShowRejectDialog(false);
+      setRejectionReason('');
       fetchReportData();
     } catch (error) {
       console.error('Error rejecting requisition:', error);
-      message.error('Failed to reject requisition');
+      toast.error('Failed to reject requisition');
     } finally {
       setLoading(false);
     }
   };
 
   const exportToExcel = () => {
-    // Prepare data with all item details in a single row
     const dataForExport = requisitions.map(req => {
-      // Combine all items into a single string with line breaks
       const itemsDetails = req.items.map(item => 
         `${item.name} (Qty: ${item.quantity}, Purpose: ${item.purpose})` +
         (req.status === 'Fulfilled' ? 
@@ -129,25 +144,20 @@ export default function Reports() {
       };
     });
   
-    // Create worksheet
     const ws = XLSX.utils.json_to_sheet(dataForExport);
-  
-    // Set column widths for better readability
     const wscols = [
       { wch: 8 },  // ID
       { wch: 20 }, // Requested By
       { wch: 20 }, // Requested At
       { wch: 12 }, // Status
-      { wch: 60 }, // Items Details (wider for multiple lines)
+      { wch: 60 }, // Items Details
       { wch: 30 }  // Rejection Reason
     ];
     ws['!cols'] = wscols;
   
-    // Create workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Requisitions');
   
-    // Generate and save the Excel file
     const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     saveAs(
       new Blob([buf], { type: 'application/octet-stream' }),
@@ -165,218 +175,413 @@ export default function Reports() {
     }
   };
 
-  const columns = [
-    { title: 'ID', dataIndex: '_id', key: 'id', width: 80, render: id => <code>{id.slice(-6)}</code> },
-    { title: 'User', dataIndex: ['user','fullName'], key: 'user', render: (name) => <div className="flex items-center"><User className="mr-2" />{name}</div> },
-    { title: 'Items', dataIndex: 'items', key: 'items', render: items => `${items.length}`, responsive: ['lg'] },
-    { title: 'Status', dataIndex: 'status', key: 'status', render: getBadge, filters: [
-        { text: 'Pending', value: 'Pending' },
-        { text: 'Approved', value: 'Approved' },
-        { text: 'Rejected', value: 'Rejected' },
-        { text: 'Fulfilled', value: 'Fulfilled' },
-      ], onFilter: (v, r) => r.status === v
-    },
-    { title: 'Date', dataIndex: 'createdAt', key: 'date', render: d => moment(d).format('MMM D, YYYY'), sorter: (a,b)=>new Date(a.createdAt)-new Date(b.createdAt) },
-    { title: '', key: 'expand', render: (_,rec) => (
-        <Button type="text" size="small" onClick={()=>setExpandedRequisition(expandedRequisition===rec._id?null:rec._id)}>
-          { expandedRequisition===rec._id? <ChevronUp/> : <ChevronDown/> }
-        </Button>
-      )
-    }
-  ];
+  const filteredRequisitions = requisitions.filter(req => {
+    const matchesSearch = req.user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      req._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      req.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch;
+  });
 
   return (
-    <div className="p-4 sm:p-6">
-      <Card className="w-full overflow-x-auto" title={<div className="flex items-center"><FileText className="mr-2"/>Requisitions Report</div>}>
-        <Row gutter={[16,16]}> 
-          <Col xs={24} sm={12} md={6}>
-            <label className="block mb-1 text-sm">Type</label>
-            <Select value={reportType} onChange={setReportType} suffixIcon={<Calendar/>} style={{ width: '100%' }}>
-              <Option value="daily">Daily</Option>
-              <Option value="weekly">Weekly</Option>
-              <Option value="monthly">Monthly</Option>
-              <Option value="custom">Custom</Option>
-            </Select>
-          </Col>
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+      <ToastContainer />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <h2 className="text-xl sm:text-2xl font-semibold flex items-center">
+          <FileText className="mr-2 h-5 w-5" /> Requisitions Report
+        </h2>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={exportToExcel}
+            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+          >
+            <Download className="mr-2 h-4 w-4" /> Export
+          </button>
+        </div>
+      </div>
 
-          <Col xs={24} sm={12} md={10}>
-            <label className="block mb-1 text-sm">Date Range</label>
-            <RangePicker
-              value={dateRange}
-              onChange={handleDateChange}
-              disabled={reportType!=='custom'}
-              style={{ width: '100%' }}
-            />
-          </Col>
-
-          <Col xs={24} sm={12} md={5}>
-            <label className="block mb-1 text-sm">Status</label>
-            <Select value={statusFilter} onChange={setStatusFilter} suffixIcon={<Filter/>} style={{ width: '100%' }}>
-              <Option value="all">All</Option>
-              <Option value="Pending">Pending</Option>
-              <Option value="Approved">Approved</Option>
-              <Option value="Rejected">Rejected</Option>
-              <Option value="Fulfilled">Fulfilled</Option>
-            </Select>
-          </Col>
-
-          <Col xs={24} sm={12} md={3} className="flex items-end justify-end">
-            <Button type="primary" block onClick={fetchReportData} loading={loading}>Generate</Button>
-          </Col>
-        </Row>
-
-        { requisitions.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center my-4">
-            <div className="text-sm text-gray-600 mb-2 sm:mb-0">
-              {requisitions.length} records from {dateRange[0].format('MMM D')} to {dateRange[1].format('MMM D, YYYY')}
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button icon={<Download/>} block={false} onClick={exportToExcel}>Excel</Button>
-              <Button icon={<Printer/>} block={false} onClick={()=>window.print()}>Print</Button>
-            </div>
-          </div>
-        )}
+      {/* Filters - Stacked on mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+          <select
+            value={reportType}
+            onChange={(e) => setReportType(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
 
         <div>
-          { loading ? (
-            <div className="text-center py-8"><Spin size="large"/></div>
-          ) : requisitions.length>0 ? (
-            <Table
-              columns={columns}
-              dataSource={requisitions}
-              rowKey="_id"
-              pagination={{ pageSize: 10, responsive: true }}
-              scroll={{ x: 'max-content' }}
-              expandable={{
-                expandedRowRender: record => (
-                  <div className="p-4 bg-gray-50 rounded">
-                    <Row gutter={[16,16]}> 
-                      <Col xs={24} md={12}>
-                        <h5 className="font-medium mb-2">Request Info</h5>
-                        <p><strong>By:</strong> {record.user?.fullName}</p>
-                        <p><strong>At:</strong> {moment(record.createdAt).format('lll')}</p>
-                        {record.rejectionReason && (
-                          <p><strong>Rejection Reason:</strong> {record.rejectionReason}</p>
-                        )}
-                      </Col>
-                      <Col xs={24} md={12}>
-                        <h5 className="font-medium mb-2">Items</h5>
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead>
-                            <tr>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Item
-                              </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Quantity
-                              </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Purpose
-                              </th>
-                              {(record.status !== "Pending") && (
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  {dateKey[record.status]}
-                                </th>
-                              )}
-                              {record.status === "Fulfilled" && (
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Fulfilled By
-                                </th>
-                              )}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {record.items.map((item, index) => (
-                              <tr key={index}>
-                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                  {item.name}
-                                </td>
-                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                                  {item.quantity}
-                                </td>
-                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                                  {item.purpose}
-                                </td>
-                                {record.status !== "Pending" && (
-                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                                    {moment(record[dateKey[record.status]]).format('lll')}
-                                  </td>
-                                )}
-                                {record.status === "Fulfilled" && (
-                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                                    {record.fulfilledBy?.fullName || 'Unknown User'}
-                                  </td>
-                                )}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </Col>
-                    </Row>
-                    {record.status === 'Pending' && (
-                      <div className="flex justify-end space-x-2 mt-4">
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedRequisition(record._id);
-                            setShowRejectDialog(true);
-                          }}
-                          danger
-                        >
-                          Reject
-                        </Button>
-                        <Button
-                          type="primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleApprove(record._id);
-                          }}
-                        >
-                          Approve
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ),
-                rowExpandable: () => true,
-                expandedRowKeys: expandedRequisition ? [expandedRequisition] : []
-              }}
+          <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={dateRange[0].format('YYYY-MM-DD')}
+              onChange={(e) => setDateRange([moment(e.target.value), dateRange[1]])}
+              disabled={reportType !== 'custom'}
+              className="w-full border rounded-md px-3 py-2 text-sm"
             />
+            <input
+              type="date"
+              value={dateRange[1].format('YYYY-MM-DD')}
+              onChange={(e) => setDateRange([dateRange[0], moment(e.target.value)])}
+              disabled={reportType !== 'custom'}
+              className="w-full border rounded-md px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="all">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Fulfilled">Fulfilled</option>
+          </select>
+        </div>
+
+        <div className="flex items-end">
+          <button
+            onClick={fetchReportData}
+            disabled={loading}
+            className={`w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+          >
+            {loading ? 'Generating...' : 'Generate Report'}
+          </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-4 w-4 text-gray-400" />
+        </div>
+        <input
+          type="text"
+          placeholder="Search requisitions..."
+          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      {/* Results */}
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : filteredRequisitions.length > 0 ? (
+        <div className="space-y-4">
+          <div className="text-sm text-gray-600">
+            Showing {filteredRequisitions.length} records from {dateRange[0].format('MMM D')} to {dateRange[1].format('MMM D, YYYY')}
+          </div>
+
+          {/* Mobile View - Cards */}
+          {windowWidth < 768 ? (
+            <div className="space-y-3">
+              {filteredRequisitions.map((req) => (
+                <div key={req._id} className="border rounded-lg shadow-sm overflow-hidden">
+                  <div 
+                    className="p-3 flex justify-between items-center cursor-pointer"
+                    onClick={() => setExpandedRequisition(expandedRequisition === req._id ? null : req._id)}
+                  >
+                    <div>
+                      <div className="font-medium text-sm">{req.user?.fullName || 'Unknown User'}</div>
+                      <div className="text-xs text-gray-500">
+                        ID: {req._id.slice(-6)} • {moment(req.createdAt).format('MMM D')} • {req.items.length} items
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getBadge(req.status)}
+                      {expandedRequisition === req._id ? (
+                        <ChevronUp className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+
+                  {expandedRequisition === req._id && (
+                    <div className="p-3 border-t bg-gray-50">
+                      <div className="mb-3">
+                        <h5 className="font-medium text-sm mb-2">Request Info</h5>
+                        <div className="text-sm space-y-1">
+                          <div><strong>Requested At:</strong> {moment(req.createdAt).format('lll')}</div>
+                          {req.rejectionReason && (
+                            <div><strong>Rejection Reason:</strong> {req.rejectionReason}</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mb-3">
+                        <h5 className="font-medium text-sm mb-2">Items</h5>
+                        <div className="space-y-2">
+                          {req.items.map((item, index) => (
+                            <div key={index} className="text-sm border-b pb-2 last:border-b-0">
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-gray-600">Qty: {item.quantity}</div>
+                              <div className="text-gray-600">Purpose: {item.purpose || 'N/A'}</div>
+                              {req.status !== "Pending" && (
+                                <div className="text-gray-600">
+                                  {req.status} at: {moment(req[dateKey[req.status]]).format('lll')}
+                                </div>
+                              )}
+                              {req.status === "Fulfilled" && (
+                                <div className="text-gray-600">
+                                  Fulfilled by: {req.fulfilledBy?.fullName || 'Unknown User'}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {req.status === 'Pending' && (
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedRequisition(req._id);
+                              setShowRejectDialog(true);
+                            }}
+                            className="px-3 py-1 border border-red-600 text-red-600 rounded-md hover:bg-red-50 text-sm"
+                          >
+                            Reject
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApprove(req._id);
+                            }}
+                            className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                          >
+                            Approve
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className="text-center p-8 text-gray-500">
-              {loading ? null : 'No data — generate a report.'}
+            /* Desktop View - Table */
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredRequisitions.map((req) => (
+                    <React.Fragment key={req._id}>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-mono">{req._id.slice(-6)}</td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-2" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {req.user?.fullName || 'Unknown User'}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {req.user?.role || 'No role'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {req.items.length} items
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {getBadge(req.status)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {moment(req.createdAt).format('MMM D, YYYY')}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => setExpandedRequisition(expandedRequisition === req._id ? null : req._id)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            {expandedRequisition === req._id ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                      {expandedRequisition === req._id && (
+                        <tr>
+                          <td colSpan="6" className="px-4 py-4 bg-gray-50">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <h5 className="font-medium text-sm mb-2">Request Details</h5>
+                                <div className="text-sm space-y-1">
+                                  <div><strong>Requested At:</strong> {moment(req.createdAt).format('lll')}</div>
+                                  {req.rejectionReason && (
+                                    <div><strong>Rejection Reason:</strong> {req.rejectionReason}</div>
+                                  )}
+                                </div>
+                              </div>
+                              <div>
+                                <h5 className="font-medium text-sm mb-2">Items</h5>
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full divide-y divide-gray-200">
+                                    <thead>
+                                      <tr>
+                                        <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                        <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                                        <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                                        {req.status !== "Pending" && (
+                                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            {req.status === "Approved" ? "Approved At" : 
+                                             req.status === "Rejected" ? "Rejected At" : "Fulfilled At"}
+                                          </th>
+                                        )}
+                                        {req.status === "Fulfilled" && (
+                                          <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Fulfilled By
+                                          </th>
+                                        )}
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {req.items.map((item, index) => (
+                                        <tr key={index}>
+                                          <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900">
+                                            {item.name}
+                                          </td>
+                                          <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-500">
+                                            {item.quantity}
+                                          </td>
+                                          <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-500">
+                                            {item.purpose}
+                                          </td>
+                                          {req.status !== "Pending" && (
+                                            <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-500">
+                                              {moment(req[dateKey[req.status]]).format('lll')}
+                                            </td>
+                                          )}
+                                          {req.status === "Fulfilled" && (
+                                            <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-500">
+                                              {req.fulfilledBy?.fullName || 'Unknown User'}
+                                            </td>
+                                          )}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
+                            {req.status === 'Pending' && (
+                              <div className="flex justify-end gap-2 mt-4">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedRequisition(req._id);
+                                    setShowRejectDialog(true);
+                                  }}
+                                  className="px-3 py-1 border border-red-600 text-red-600 rounded-md hover:bg-red-50 text-sm"
+                                >
+                                  Reject
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleApprove(req._id);
+                                  }}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                >
+                                  Approve
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
-      </Card>
+      ) : (
+        <div className="text-center p-8 text-gray-500">
+          {loading ? null : 'No requisitions found. Generate a report or adjust your filters.'}
+        </div>
+      )}
 
       {/* Reject Dialog */}
       {showRejectDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4">Reject Requisition</h3>
-            <textarea
-              className="w-full p-2 border rounded mb-4"
-              placeholder="Enter rejection reason..."
-              rows={4}
-              id="rejectionReason"
-            />
-            <div className="flex justify-end space-x-2">
-              <Button onClick={() => setShowRejectDialog(false)}>Cancel</Button>
-              <Button 
-                type="primary" 
-                danger
-                onClick={() => {
-                  const reason = document.getElementById('rejectionReason').value;
-                  if (reason) {
-                    handleReject(reason);
-                  } else {
-                    message.error('Please enter a rejection reason');
-                  }
-                }}
-              >
-                Confirm Reject
-              </Button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-4 sm:p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Reject Requisition</h3>
+                <button
+                  onClick={() => {
+                    setShowRejectDialog(false);
+                    setRejectionReason('');
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <XIcon className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason for rejection
+                </label>
+                <textarea
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  rows="3"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Enter the reason for rejecting this requisition..."
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowRejectDialog(false);
+                    setRejectionReason('');
+                  }}
+                  className="px-3 py-1 sm:px-4 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReject}
+                  disabled={!rejectionReason.trim()}
+                  className={`px-3 py-1 sm:px-4 sm:py-2 rounded-md text-white text-sm ${
+                    !rejectionReason.trim()
+                      ? 'bg-red-400 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  Confirm Rejection
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -9,6 +9,9 @@ import {
 // } from '../controllers/requisitionController.js'; 
 import { getSupplierMessages } from '../controllers/supplierController.js';
 import { scanQRCode } from '../controllers/qrCodeController.js';
+import { getApprovedRequisitionsCount } from '../controllers/requisitionController.js';
+
+
 
 const router = express.Router();
 
@@ -22,6 +25,9 @@ router.get('/low-stock', getLowStockItems);
 
 // Supplier routes
 router.get('/supplier-messages', getSupplierMessages);
+
+// Add this route to your existing staffRoutes.js
+router.get('/approved-requisitions-count', getApprovedRequisitionsCount);
 
 // QR code routes
 router.post('/scan-qr', scanQRCode);

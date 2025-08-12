@@ -1,8 +1,6 @@
-// src/modules/staff/Reports.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
 import {
   FileText,
   Download,
@@ -10,17 +8,15 @@ import {
   Calendar,
   Filter,
   CheckCircle,
-  Package,
   ChevronDown,
   ChevronUp,
   User,
   Box
 } from 'lucide-react';
-import { DatePicker, Select, Button, Table, Card, Spin, message, Row, Col, Badge } from 'antd';
+import { DatePicker, Button, Card, Spin, message, Row, Col, Badge } from 'antd';
 import moment from 'moment';
 
 const { RangePicker } = DatePicker;
-const { Option } = Select;
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState([moment().subtract(1, 'month'), moment()]);
@@ -43,7 +39,7 @@ const Reports = () => {
       );
 
       setRequisitions(data.data || []);
-      message.success(`Found ${data.data?.length || 0} fulfilled requisitions`);
+      //message.success(`Found ${data.data?.length || 0} fulfilled requisitions`);
     } catch (error) {
       console.error('Error fetching fulfilled requisitions:', error);
       message.error('Failed to fetch requisitions');
@@ -86,79 +82,14 @@ const Reports = () => {
     if (dates && dates.length === 2) setDateRange(dates);
   };
 
-  const columns = [
-    { 
-      title: 'ID', 
-      dataIndex: '_id', 
-      key: 'id', 
-      width: 80, 
-      render: id => <code>{id.toString().slice(-6)}</code> 
-    },
-    { 
-      title: 'Requested By', 
-      dataIndex: ['user', 'fullName'], 
-      key: 'user', 
-      render: (name) => (
-        <div className="flex items-center">
-          <User className="mr-2 h-4 w-4" />
-          {name}
-        </div>
-      ) 
-    },
-    { 
-      title: 'Items', 
-      dataIndex: 'items', 
-      key: 'items', 
-      render: items => (
-        <Badge 
-          count={items.reduce((sum, item) => sum + item.quantity, 0)} 
-          showZero 
-          className="bg-blue-100 text-blue-800"
-        />
-      ),
-      responsive: ['md'] 
-    },
-    { 
-      title: 'Status', 
-      dataIndex: 'status', 
-      key: 'status', 
-      render: () => (
-        <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 flex items-center">
-          <CheckCircle className="mr-1 h-3 w-3" />
-          Fulfilled
-        </span>
-      ) 
-    },
-    { 
-      title: 'Fulfilled Date', 
-      dataIndex: 'fulfilledAt', 
-      key: 'date', 
-      render: d => moment(d).format('MMM D, YYYY'), 
-      sorter: (a,b) => new Date(a.fulfilledAt) - new Date(b.fulfilledAt) 
-    },
-    { 
-      title: '', 
-      key: 'expand', 
-      render: (_, rec) => (
-        <Button 
-          type="text" 
-          size="small" 
-          onClick={() => setExpandedRequisition(expandedRequisition === rec._id ? null : rec._id)}
-        >
-          { expandedRequisition === rec._id ? <ChevronUp /> : <ChevronDown /> }
-        </Button>
-      )
-    }
-  ];
-
   useEffect(() => {
     fetchFulfilledRequisitions();
   }, []);
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-4">
       <Card 
-        className="w-full overflow-x-auto" 
+        className="w-full" 
         title={
           <div className="flex items-center">
             <FileText className="mr-2" />
@@ -222,54 +153,93 @@ const Reports = () => {
           </div>
         )}
 
-        <div>
+        <div className="mt-4">
           {loading ? (
             <div className="text-center py-8">
               <Spin size="large" />
             </div>
           ) : requisitions.length > 0 ? (
-            <Table
-              columns={columns}
-              dataSource={requisitions}
-              rowKey="_id"
-              pagination={{ pageSize: 10, responsive: true }}
-              scroll={{ x: 'max-content' }}
-              expandable={{
-                expandedRowRender: record => (
-                  <div className="p-4 bg-gray-50 rounded">
-                    <Row gutter={[16, 16]}>
-                      <Col xs={24} md={12}>
-                        <h5 className="font-medium mb-2">Request Details</h5>
-                        <p>
-                          <strong>Requested By:</strong> {record.user?.fullName} ({record.user?.email})
-                        </p>
-                        <p>
-                          <strong>Request Date:</strong> {moment(record.createdAt).format('lll')}
-                        </p>
-                        <p>
-                          <strong>Fulfilled On:</strong> {moment(record.fulfilledAt).format('lll')}
-                        </p>
-                      </Col>
-                      <Col xs={24} md={12}>
-                        <h5 className="font-medium mb-2">Items Fulfilled</h5>
-                        <div className="space-y-2">
-                          {record.items.map((item, index) => (
-                            <div key={index} className="flex items-center">
-                              <Box className="mr-2 h-4 w-4 text-gray-500" />
-                              <span>
-                                {item.item?.name || 'Unknown Item'} × {item.quantity}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </Col>
-                    </Row>
+            <div className="space-y-3">
+              {requisitions.map(requisition => (
+                <Card 
+                  key={requisition._id} 
+                  className="w-full hover:shadow-md transition-shadow"
+                >
+                  <div 
+                    className="flex justify-between items-start cursor-pointer"
+                    onClick={() => setExpandedRequisition(
+                      expandedRequisition === requisition._id ? null : requisition._id
+                    )}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center mb-1">
+                        <User className="h-4 w-4 mr-2 text-gray-500" />
+                        <span className="font-medium truncate">
+                          {requisition.user?.fullName || 'Unknown User'}
+                        </span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <span className="mr-2">
+                          {moment(requisition.fulfilledAt).format('MMM D, YYYY')}
+                        </span>
+                        <Badge 
+                          count={`${requisition.items.reduce((sum, item) => sum + item.quantity, 0)} items`}
+                          className="bg-blue-100 text-blue-800"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center ml-2">
+                      <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 flex items-center mr-2">
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        Fulfilled
+                      </span>
+                      {expandedRequisition === requisition._id ? (
+                        <ChevronUp className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      )}
+                    </div>
                   </div>
-                ),
-                rowExpandable: () => true,
-                expandedRowKeys: expandedRequisition ? [expandedRequisition] : []
-              }}
-            />
+
+                  {expandedRequisition === requisition._id && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} sm={12}>
+                          <h5 className="font-medium mb-2">Request Details</h5>
+                          <div className="space-y-1 text-sm">
+                            <p>
+                              <span className="text-gray-600">Requested By:</span>{' '}
+                              {requisition.user?.fullName} ({requisition.user?.email})
+                            </p>
+                            <p>
+                              <span className="text-gray-600">Request Date:</span>{' '}
+                              {moment(requisition.createdAt).format('lll')}
+                            </p>
+                            <p>
+                              <span className="text-gray-600">Fulfilled On:</span>{' '}
+                              {moment(requisition.fulfilledAt).format('lll')}
+                            </p>
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <h5 className="font-medium mb-2">Items Fulfilled</h5>
+                          <div className="space-y-2">
+                            {requisition.items.map((item, index) => (
+                              <div key={index} className="flex items-center text-sm">
+                                <Box className="mr-2 h-4 w-4 text-gray-500" />
+                                <span>
+                                  {item.item?.name || 'Unknown Item'} × {item.quantity}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </Col>
+                      </Row>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
           ) : (
             <div className="text-center p-8 text-gray-500">
               {loading ? null : 'No fulfilled requisitions found for the selected period'}
