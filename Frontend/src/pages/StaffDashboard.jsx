@@ -8,7 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Import components
 import StockLevels from '../modules/staff/StockLevels';
 import Requisitions from '../modules/staff/Requisitions';
-import QRScanner from '../modules/admin/QRScanner';
+import QRScanner from '../modules/staff/QRScanner';
 import Reports from '../modules/staff/Reports';
 
 const StaffDashboard = () => {

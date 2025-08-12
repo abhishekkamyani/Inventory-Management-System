@@ -13,6 +13,7 @@ const QRScanner = () => {
   const [cameraAllowed, setCameraAllowed] = useState(false);
   const [actionType, setActionType] = useState('receive'); // 'receive' or 'take'
   const qrRef = useRef(null);
+  const streamRef = useRef(null); // To keep track of the camera stream
 
   // Validate ObjectId format
   const isValidObjectId = (id) => {
@@ -25,10 +26,22 @@ const QRScanner = () => {
     return parts[parts.length - 1];
   };
 
+  // Stop camera stream
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (qrRef.current) {
+      qrRef.current.stopCamera();
+    }
+  };
+
   // Request camera access
   const requestCameraAccess = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      streamRef.current = stream; // Store the stream reference
       setCameraAllowed(true);
       setIsScanning(true);
       if (qrRef.current) {
@@ -92,11 +105,7 @@ const QRScanner = () => {
       
       setShowSuccess(true);
       // Reset state after successful update
-      setResult('');
-      setItem(null);
-      setQuantity(1);
-      setIsScanning(false);
-      setCameraAllowed(false);
+      resetForm();
     } catch (err) {
       alert(`Failed to ${actionType} stock`);
       console.error(`Error ${actionType === 'receive' ? 'receiving' : 'taking'} stock:`, 
@@ -106,10 +115,38 @@ const QRScanner = () => {
     }
   };
 
+  const resetForm = () => {
+    stopCamera(); // Stop the camera when resetting
+    setResult('');
+    setItem(null);
+    setQuantity(1);
+    setIsScanning(false);
+    setCameraAllowed(false);
+    setActionType('receive');
+    setError('');
+  };
+
+  const handleCancel = () => {
+    resetForm();
+  };
+
+  const handleStopScanning = () => {
+    stopCamera();
+    setIsScanning(false);
+    setCameraAllowed(false);
+  };
+
   const handleError = (err) => {
     console.error('QR Scanner error:', err);
     setError('Failed to access the camera. Please allow camera permissions and try again.');
   };
+
+  // Clean up camera stream when component unmounts
+  React.useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -139,7 +176,7 @@ const QRScanner = () => {
               <p className="text-red-500 text-center">Camera access not granted.</p>
             )}
             <button
-              onClick={() => setIsScanning(false)}
+              onClick={handleStopScanning}
               className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition duration-200"
             >
               Stop Scanning
@@ -211,15 +248,24 @@ const QRScanner = () => {
               />
             </div>
 
-            <button
-              onClick={handleUpdateStock}
-              disabled={loading}
-              className={`w-full mt-4 ${
-                actionType === 'receive' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'
-              } text-white py-2 px-4 rounded-md transition duration-200 disabled:opacity-50`}
-            >
-              {actionType === 'receive' ? 'Add to Stock' : 'Remove from Stock'}
-            </button>
+            <div className="flex space-x-4 mt-4">
+              <button
+                onClick={handleUpdateStock}
+                disabled={loading}
+                className={`flex-1 ${
+                  actionType === 'receive' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'
+                } text-white py-2 px-4 rounded-md transition duration-200 disabled:opacity-50`}
+              >
+                {actionType === 'receive' ? 'Add to Stock' : 'Remove from Stock'}
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition duration-200 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 
@@ -237,7 +283,7 @@ const QRScanner = () => {
             <button
               onClick={() => {
                 setShowSuccess(false);
-                setActionType('receive'); // Reset to default action
+                requestCameraAccess();
               }}
               className="w-full mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200"
             >
