@@ -48,7 +48,7 @@ app.use("/api/director", directorRoutes);
 
 // MongoDB connection (remains the same)
 mongoose
-  .connect(process.env.DB_URl)
+  .connect(process.env.DB_URL)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
