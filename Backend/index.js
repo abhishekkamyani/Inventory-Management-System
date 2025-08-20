@@ -36,7 +36,7 @@ app.use(express.static("public"));
 
 
 // Routes
-app.use("/auth", UserRouter);
+app.use("/api/auth", UserRouter);
 app.use("/api/staff", staffRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/users", userRoutes);
