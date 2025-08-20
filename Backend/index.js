@@ -29,7 +29,9 @@ app.use(cookieParser());
 // --- CHANGE #1: Make CORS dynamic ---
 // Use an environment variable for the frontend URL.
 // In Vercel, you will set FRONTEND_URL to your deployed frontend's address.
-app.use(cors({ credentials: true, origin: 'http://localhost:5173' }));
+app.use(cors({
+  origin: '*'
+}));
 app.use(express.static("public"));
 
 
